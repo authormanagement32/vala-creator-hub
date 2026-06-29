@@ -32,7 +32,7 @@ async function logAudit(
     entity_id: args.entityId ?? null,
     action: args.action,
     summary: args.summary,
-    metadata: args.metadata ?? {},
+    metadata: (args.metadata ?? {}) as any,
     severity: args.severity ?? "info",
   });
   if (args.notify !== false) {
