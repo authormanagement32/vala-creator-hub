@@ -14,7 +14,7 @@ export interface DomainWallProps<T> {
   subtitle: string;
   kpis: KpiItem[];
   statusOptions?: { value: string; label: string }[];
-  extraFilter?: { value: string; onChange: (v: string) => void; options: { value: string; label: string }[]; placeholder: string };
+  extraFilter?: { placeholder: string; options: { value: string; label: string }[] };
   createLabel?: string;
   columns: Column<T>[];
   rowKey: (r: T) => string;
