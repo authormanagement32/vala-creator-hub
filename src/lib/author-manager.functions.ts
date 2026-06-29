@@ -181,7 +181,7 @@ export const runSecurityScan = createServerFn({ method: "POST" })
     const { data: cur, error: cerr } = await context.supabase
       .from("source_repos").select("scan_findings,name").eq("id", data.id).single();
     if (cerr) throw new Error(cerr.message);
-    const findings: Array<{ severity: string; dependency?: string }> = Array.isArray(cur?.scan_findings) ? cur!.scan_findings : [];
+    const findings: Array<{ severity: string; dependency?: string }> = Array.isArray(cur?.scan_findings) ? (cur!.scan_findings as any) : [];
     const count = (sev: string) => findings.filter((f) => (f.severity ?? "").toLowerCase() === sev).length;
     const critical = count("critical"), high = count("high"), medium = count("medium"), low = count("low");
     const patch = {
