@@ -281,6 +281,57 @@ export const markNotificationRead = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---- CSV Export ----
+function toCsv(rows: Array<Record<string, unknown>>, columns: string[]): string {
+  const esc = (v: unknown) => {
+    if (v === null || v === undefined) return "";
+    const s = typeof v === "object" ? JSON.stringify(v) : String(v);
+    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const header = columns.join(",");
+  const body = rows.map((r) => columns.map((c) => esc(r[c])).join(",")).join("\n");
+  return header + "\n" + body;
+}
+
+export const exportAuditCsv = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    from: z.string().optional(),
+    to: z.string().optional(),
+    entity: z.string().optional(),
+    entityId: z.string().uuid().optional(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureBoss(context);
+    let q = context.supabase.from("audit_events").select("*").order("created_at", { ascending: false }).limit(10000);
+    if (data.from) q = q.gte("created_at", data.from);
+    if (data.to) q = q.lte("created_at", data.to);
+    if (data.entity) q = q.eq("entity", data.entity);
+    if (data.entityId) q = q.eq("entity_id", data.entityId);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    const csv = toCsv(rows ?? [], ["created_at","actor_email","entity","entity_id","action","severity","summary","metadata"]);
+    return { csv, count: rows?.length ?? 0 };
+  });
+
+export const exportNotificationsCsv = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    from: z.string().optional(),
+    to: z.string().optional(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureBoss(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let q = supabaseAdmin.from("notifications").select("*").order("created_at", { ascending: false }).limit(10000);
+    if (data.from) q = q.gte("created_at", data.from);
+    if (data.to) q = q.lte("created_at", data.to);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    const csv = toCsv(rows ?? [], ["created_at","user_id","title","body","severity","link","read_at"]);
+    return { csv, count: rows?.length ?? 0 };
+  });
+
 // ---- Roles bootstrap ----
 export const claimBossRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -295,6 +346,7 @@ export const claimBossRole = createServerFn({ method: "POST" })
     await supabaseAdmin.from("user_roles").insert({ user_id: context.userId, role: "boss" });
     return { claimed: true, alreadyHad: false };
   });
+
 
 export const whoAmI = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
