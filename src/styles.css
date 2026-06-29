@@ -163,15 +163,40 @@
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
+  --brand: oklch(0.68 0.16 258);
+  --brand-foreground: oklch(0.15 0.02 258);
+  --brand-muted: oklch(0.28 0.06 258);
+  --success: oklch(0.7 0.14 152);
+  --success-foreground: oklch(0.15 0.04 152);
+  --warning: oklch(0.78 0.15 75);
+  --warning-foreground: oklch(0.18 0.04 75);
+  --danger: oklch(0.7 0.19 22);
+  --danger-foreground: oklch(0.15 0.02 22);
+  --info: oklch(0.7 0.13 230);
+  --info-foreground: oklch(0.15 0.02 230);
+  --surface: oklch(0.165 0.03 258);
+  --surface-2: oklch(0.205 0.035 258);
+  --surface-3: oklch(0.245 0.035 258);
+  --hairline: oklch(1 0 0 / 8%);
 }
 
 @layer base {
-  * {
-    border-color: var(--color-border);
-  }
-
+  * { border-color: var(--color-border); }
+  html, body { font-family: var(--font-sans); }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-feature-settings: "cv11", "ss01", "ss03";
+    -webkit-font-smoothing: antialiased;
   }
 }
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  &::-webkit-scrollbar { height: 6px; width: 6px; }
+  &::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--color-foreground) 20%, transparent);
+    border-radius: 999px;
+  }
+}
+
