@@ -181,6 +181,7 @@ export type Database = {
           outdated_dependencies: number
           product_id: string | null
           provider: string
+          scan_findings: Json
           updated_at: string
           url: string
           vuln_critical: number
@@ -202,6 +203,7 @@ export type Database = {
           outdated_dependencies?: number
           product_id?: string | null
           provider?: string
+          scan_findings?: Json
           updated_at?: string
           url: string
           vuln_critical?: number
@@ -223,6 +225,7 @@ export type Database = {
           outdated_dependencies?: number
           product_id?: string | null
           provider?: string
+          scan_findings?: Json
           updated_at?: string
           url?: string
           vuln_critical?: number
