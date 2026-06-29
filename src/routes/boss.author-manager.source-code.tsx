@@ -264,11 +264,3 @@ function LinkRepoDialog({ onClose, onSubmit, busy }: { onClose: () => void; onSu
   );
 }
 
-function Sev({ label, n, tone }: { label: string; n: number; tone: string }) {
-  return (
-    <div className="rounded-md border border-hairline bg-surface-2 p-2">
-      <div className={`text-base font-semibold ${tone}`}>{n}</div>
-      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
-    </div>
-  );
-}
