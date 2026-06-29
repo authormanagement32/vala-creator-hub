@@ -13,7 +13,7 @@ export interface Column<T> {
 interface Props<T> {
   columns: Column<T>[];
   rows: T[];
-  state: "loading" | "empty" | "error" | "ready";
+  state: LoadState;
   emptyTitle?: string;
   emptyDescription?: string;
   onRowClick?: (row: T) => void;
