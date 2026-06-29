@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BossAuthorManagerRouteImport } from './routes/boss.author-manager'
 import { Route as BossAuthorManagerIndexRouteImport } from './routes/boss.author-manager.index'
@@ -34,6 +35,11 @@ import { Route as BossAuthorManagerApplicationsRouteImport } from './routes/boss
 import { Route as BossAuthorManagerAnalyticsRouteImport } from './routes/boss.author-manager.analytics'
 import { Route as BossAuthorManagerAiModelsRouteImport } from './routes/boss.author-manager.ai-models'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -177,6 +183,7 @@ const BossAuthorManagerAiModelsRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/boss/author-manager': typeof BossAuthorManagerRouteWithChildren
   '/boss/author-manager/ai-models': typeof BossAuthorManagerAiModelsRoute
   '/boss/author-manager/analytics': typeof BossAuthorManagerAnalyticsRoute
@@ -203,6 +210,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/boss/author-manager/ai-models': typeof BossAuthorManagerAiModelsRoute
   '/boss/author-manager/analytics': typeof BossAuthorManagerAnalyticsRoute
   '/boss/author-manager/applications': typeof BossAuthorManagerApplicationsRoute
@@ -229,6 +237,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/boss/author-manager': typeof BossAuthorManagerRouteWithChildren
   '/boss/author-manager/ai-models': typeof BossAuthorManagerAiModelsRoute
   '/boss/author-manager/analytics': typeof BossAuthorManagerAnalyticsRoute
@@ -257,6 +266,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
     | '/boss/author-manager'
     | '/boss/author-manager/ai-models'
     | '/boss/author-manager/analytics'
@@ -283,6 +293,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/auth'
     | '/boss/author-manager/ai-models'
     | '/boss/author-manager/analytics'
     | '/boss/author-manager/applications'
@@ -308,6 +319,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/auth'
     | '/boss/author-manager'
     | '/boss/author-manager/ai-models'
     | '/boss/author-manager/analytics'
@@ -335,11 +347,19 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
   BossAuthorManagerRoute: typeof BossAuthorManagerRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -566,6 +586,7 @@ const BossAuthorManagerRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
   BossAuthorManagerRoute: BossAuthorManagerRouteWithChildren,
 }
 export const routeTree = rootRouteImport
