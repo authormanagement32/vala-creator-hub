@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Bell, Command, Search } from "lucide-react";
+import { Command, Search } from "lucide-react";
+import { NotificationCenter } from "./NotificationCenter";
 import { WALLS } from "../nav";
 
 interface Props {
@@ -39,9 +40,7 @@ export function TopBar({ onSearch, search, onOpenPalette }: Props) {
           </button>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <button className="grid h-9 w-9 place-items-center rounded-md border border-hairline text-muted-foreground hover:text-foreground">
-            <Bell className="h-4 w-4" />
-          </button>
+          <NotificationCenter />
           <div className="grid h-9 w-9 place-items-center rounded-full bg-brand text-xs font-semibold text-brand-foreground">
             B
           </div>
