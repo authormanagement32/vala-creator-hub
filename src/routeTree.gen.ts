@@ -10,33 +10,332 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BossAuthorManagerRouteImport } from './routes/boss.author-manager'
+import { Route as BossAuthorManagerIndexRouteImport } from './routes/boss.author-manager.index'
+import { Route as BossAuthorManagerVersionsRouteImport } from './routes/boss.author-manager.versions'
+import { Route as BossAuthorManagerThemesRouteImport } from './routes/boss.author-manager.themes'
+import { Route as BossAuthorManagerTemplatesRouteImport } from './routes/boss.author-manager.templates'
+import { Route as BossAuthorManagerSupportRouteImport } from './routes/boss.author-manager.support'
+import { Route as BossAuthorManagerSourceCodeRouteImport } from './routes/boss.author-manager.source-code'
+import { Route as BossAuthorManagerSettingsRouteImport } from './routes/boss.author-manager.settings'
+import { Route as BossAuthorManagerRoyaltiesRouteImport } from './routes/boss.author-manager.royalties'
+import { Route as BossAuthorManagerReviewsRouteImport } from './routes/boss.author-manager.reviews'
+import { Route as BossAuthorManagerRevenueRouteImport } from './routes/boss.author-manager.revenue'
+import { Route as BossAuthorManagerReportsRouteImport } from './routes/boss.author-manager.reports'
+import { Route as BossAuthorManagerProductsRouteImport } from './routes/boss.author-manager.products'
+import { Route as BossAuthorManagerPluginsRouteImport } from './routes/boss.author-manager.plugins'
+import { Route as BossAuthorManagerLicensesRouteImport } from './routes/boss.author-manager.licenses'
+import { Route as BossAuthorManagerDownloadsRouteImport } from './routes/boss.author-manager.downloads'
+import { Route as BossAuthorManagerDocumentsRouteImport } from './routes/boss.author-manager.documents'
+import { Route as BossAuthorManagerDashboardRouteImport } from './routes/boss.author-manager.dashboard'
+import { Route as BossAuthorManagerAuthorsRouteImport } from './routes/boss.author-manager.authors'
+import { Route as BossAuthorManagerApprovalsRouteImport } from './routes/boss.author-manager.approvals'
+import { Route as BossAuthorManagerApplicationsRouteImport } from './routes/boss.author-manager.applications'
+import { Route as BossAuthorManagerAnalyticsRouteImport } from './routes/boss.author-manager.analytics'
+import { Route as BossAuthorManagerAiModelsRouteImport } from './routes/boss.author-manager.ai-models'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BossAuthorManagerRoute = BossAuthorManagerRouteImport.update({
+  id: '/boss/author-manager',
+  path: '/boss/author-manager',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BossAuthorManagerIndexRoute = BossAuthorManagerIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => BossAuthorManagerRoute,
+} as any)
+const BossAuthorManagerVersionsRoute =
+  BossAuthorManagerVersionsRouteImport.update({
+    id: '/versions',
+    path: '/versions',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
+const BossAuthorManagerThemesRoute = BossAuthorManagerThemesRouteImport.update({
+  id: '/themes',
+  path: '/themes',
+  getParentRoute: () => BossAuthorManagerRoute,
+} as any)
+const BossAuthorManagerTemplatesRoute =
+  BossAuthorManagerTemplatesRouteImport.update({
+    id: '/templates',
+    path: '/templates',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
+const BossAuthorManagerSupportRoute =
+  BossAuthorManagerSupportRouteImport.update({
+    id: '/support',
+    path: '/support',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
+const BossAuthorManagerSourceCodeRoute =
+  BossAuthorManagerSourceCodeRouteImport.update({
+    id: '/source-code',
+    path: '/source-code',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
+const BossAuthorManagerSettingsRoute =
+  BossAuthorManagerSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
+const BossAuthorManagerRoyaltiesRoute =
+  BossAuthorManagerRoyaltiesRouteImport.update({
+    id: '/royalties',
+    path: '/royalties',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
+const BossAuthorManagerReviewsRoute =
+  BossAuthorManagerReviewsRouteImport.update({
+    id: '/reviews',
+    path: '/reviews',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
+const BossAuthorManagerRevenueRoute =
+  BossAuthorManagerRevenueRouteImport.update({
+    id: '/revenue',
+    path: '/revenue',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
+const BossAuthorManagerReportsRoute =
+  BossAuthorManagerReportsRouteImport.update({
+    id: '/reports',
+    path: '/reports',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
+const BossAuthorManagerProductsRoute =
+  BossAuthorManagerProductsRouteImport.update({
+    id: '/products',
+    path: '/products',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
+const BossAuthorManagerPluginsRoute =
+  BossAuthorManagerPluginsRouteImport.update({
+    id: '/plugins',
+    path: '/plugins',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
+const BossAuthorManagerLicensesRoute =
+  BossAuthorManagerLicensesRouteImport.update({
+    id: '/licenses',
+    path: '/licenses',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
+const BossAuthorManagerDownloadsRoute =
+  BossAuthorManagerDownloadsRouteImport.update({
+    id: '/downloads',
+    path: '/downloads',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
+const BossAuthorManagerDocumentsRoute =
+  BossAuthorManagerDocumentsRouteImport.update({
+    id: '/documents',
+    path: '/documents',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
+const BossAuthorManagerDashboardRoute =
+  BossAuthorManagerDashboardRouteImport.update({
+    id: '/dashboard',
+    path: '/dashboard',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
+const BossAuthorManagerAuthorsRoute =
+  BossAuthorManagerAuthorsRouteImport.update({
+    id: '/authors',
+    path: '/authors',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
+const BossAuthorManagerApprovalsRoute =
+  BossAuthorManagerApprovalsRouteImport.update({
+    id: '/approvals',
+    path: '/approvals',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
+const BossAuthorManagerApplicationsRoute =
+  BossAuthorManagerApplicationsRouteImport.update({
+    id: '/applications',
+    path: '/applications',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
+const BossAuthorManagerAnalyticsRoute =
+  BossAuthorManagerAnalyticsRouteImport.update({
+    id: '/analytics',
+    path: '/analytics',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
+const BossAuthorManagerAiModelsRoute =
+  BossAuthorManagerAiModelsRouteImport.update({
+    id: '/ai-models',
+    path: '/ai-models',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/boss/author-manager': typeof BossAuthorManagerRouteWithChildren
+  '/boss/author-manager/ai-models': typeof BossAuthorManagerAiModelsRoute
+  '/boss/author-manager/analytics': typeof BossAuthorManagerAnalyticsRoute
+  '/boss/author-manager/applications': typeof BossAuthorManagerApplicationsRoute
+  '/boss/author-manager/approvals': typeof BossAuthorManagerApprovalsRoute
+  '/boss/author-manager/authors': typeof BossAuthorManagerAuthorsRoute
+  '/boss/author-manager/dashboard': typeof BossAuthorManagerDashboardRoute
+  '/boss/author-manager/documents': typeof BossAuthorManagerDocumentsRoute
+  '/boss/author-manager/downloads': typeof BossAuthorManagerDownloadsRoute
+  '/boss/author-manager/licenses': typeof BossAuthorManagerLicensesRoute
+  '/boss/author-manager/plugins': typeof BossAuthorManagerPluginsRoute
+  '/boss/author-manager/products': typeof BossAuthorManagerProductsRoute
+  '/boss/author-manager/reports': typeof BossAuthorManagerReportsRoute
+  '/boss/author-manager/revenue': typeof BossAuthorManagerRevenueRoute
+  '/boss/author-manager/reviews': typeof BossAuthorManagerReviewsRoute
+  '/boss/author-manager/royalties': typeof BossAuthorManagerRoyaltiesRoute
+  '/boss/author-manager/settings': typeof BossAuthorManagerSettingsRoute
+  '/boss/author-manager/source-code': typeof BossAuthorManagerSourceCodeRoute
+  '/boss/author-manager/support': typeof BossAuthorManagerSupportRoute
+  '/boss/author-manager/templates': typeof BossAuthorManagerTemplatesRoute
+  '/boss/author-manager/themes': typeof BossAuthorManagerThemesRoute
+  '/boss/author-manager/versions': typeof BossAuthorManagerVersionsRoute
+  '/boss/author-manager/': typeof BossAuthorManagerIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/boss/author-manager/ai-models': typeof BossAuthorManagerAiModelsRoute
+  '/boss/author-manager/analytics': typeof BossAuthorManagerAnalyticsRoute
+  '/boss/author-manager/applications': typeof BossAuthorManagerApplicationsRoute
+  '/boss/author-manager/approvals': typeof BossAuthorManagerApprovalsRoute
+  '/boss/author-manager/authors': typeof BossAuthorManagerAuthorsRoute
+  '/boss/author-manager/dashboard': typeof BossAuthorManagerDashboardRoute
+  '/boss/author-manager/documents': typeof BossAuthorManagerDocumentsRoute
+  '/boss/author-manager/downloads': typeof BossAuthorManagerDownloadsRoute
+  '/boss/author-manager/licenses': typeof BossAuthorManagerLicensesRoute
+  '/boss/author-manager/plugins': typeof BossAuthorManagerPluginsRoute
+  '/boss/author-manager/products': typeof BossAuthorManagerProductsRoute
+  '/boss/author-manager/reports': typeof BossAuthorManagerReportsRoute
+  '/boss/author-manager/revenue': typeof BossAuthorManagerRevenueRoute
+  '/boss/author-manager/reviews': typeof BossAuthorManagerReviewsRoute
+  '/boss/author-manager/royalties': typeof BossAuthorManagerRoyaltiesRoute
+  '/boss/author-manager/settings': typeof BossAuthorManagerSettingsRoute
+  '/boss/author-manager/source-code': typeof BossAuthorManagerSourceCodeRoute
+  '/boss/author-manager/support': typeof BossAuthorManagerSupportRoute
+  '/boss/author-manager/templates': typeof BossAuthorManagerTemplatesRoute
+  '/boss/author-manager/themes': typeof BossAuthorManagerThemesRoute
+  '/boss/author-manager/versions': typeof BossAuthorManagerVersionsRoute
+  '/boss/author-manager': typeof BossAuthorManagerIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/boss/author-manager': typeof BossAuthorManagerRouteWithChildren
+  '/boss/author-manager/ai-models': typeof BossAuthorManagerAiModelsRoute
+  '/boss/author-manager/analytics': typeof BossAuthorManagerAnalyticsRoute
+  '/boss/author-manager/applications': typeof BossAuthorManagerApplicationsRoute
+  '/boss/author-manager/approvals': typeof BossAuthorManagerApprovalsRoute
+  '/boss/author-manager/authors': typeof BossAuthorManagerAuthorsRoute
+  '/boss/author-manager/dashboard': typeof BossAuthorManagerDashboardRoute
+  '/boss/author-manager/documents': typeof BossAuthorManagerDocumentsRoute
+  '/boss/author-manager/downloads': typeof BossAuthorManagerDownloadsRoute
+  '/boss/author-manager/licenses': typeof BossAuthorManagerLicensesRoute
+  '/boss/author-manager/plugins': typeof BossAuthorManagerPluginsRoute
+  '/boss/author-manager/products': typeof BossAuthorManagerProductsRoute
+  '/boss/author-manager/reports': typeof BossAuthorManagerReportsRoute
+  '/boss/author-manager/revenue': typeof BossAuthorManagerRevenueRoute
+  '/boss/author-manager/reviews': typeof BossAuthorManagerReviewsRoute
+  '/boss/author-manager/royalties': typeof BossAuthorManagerRoyaltiesRoute
+  '/boss/author-manager/settings': typeof BossAuthorManagerSettingsRoute
+  '/boss/author-manager/source-code': typeof BossAuthorManagerSourceCodeRoute
+  '/boss/author-manager/support': typeof BossAuthorManagerSupportRoute
+  '/boss/author-manager/templates': typeof BossAuthorManagerTemplatesRoute
+  '/boss/author-manager/themes': typeof BossAuthorManagerThemesRoute
+  '/boss/author-manager/versions': typeof BossAuthorManagerVersionsRoute
+  '/boss/author-manager/': typeof BossAuthorManagerIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/boss/author-manager'
+    | '/boss/author-manager/ai-models'
+    | '/boss/author-manager/analytics'
+    | '/boss/author-manager/applications'
+    | '/boss/author-manager/approvals'
+    | '/boss/author-manager/authors'
+    | '/boss/author-manager/dashboard'
+    | '/boss/author-manager/documents'
+    | '/boss/author-manager/downloads'
+    | '/boss/author-manager/licenses'
+    | '/boss/author-manager/plugins'
+    | '/boss/author-manager/products'
+    | '/boss/author-manager/reports'
+    | '/boss/author-manager/revenue'
+    | '/boss/author-manager/reviews'
+    | '/boss/author-manager/royalties'
+    | '/boss/author-manager/settings'
+    | '/boss/author-manager/source-code'
+    | '/boss/author-manager/support'
+    | '/boss/author-manager/templates'
+    | '/boss/author-manager/themes'
+    | '/boss/author-manager/versions'
+    | '/boss/author-manager/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/boss/author-manager/ai-models'
+    | '/boss/author-manager/analytics'
+    | '/boss/author-manager/applications'
+    | '/boss/author-manager/approvals'
+    | '/boss/author-manager/authors'
+    | '/boss/author-manager/dashboard'
+    | '/boss/author-manager/documents'
+    | '/boss/author-manager/downloads'
+    | '/boss/author-manager/licenses'
+    | '/boss/author-manager/plugins'
+    | '/boss/author-manager/products'
+    | '/boss/author-manager/reports'
+    | '/boss/author-manager/revenue'
+    | '/boss/author-manager/reviews'
+    | '/boss/author-manager/royalties'
+    | '/boss/author-manager/settings'
+    | '/boss/author-manager/source-code'
+    | '/boss/author-manager/support'
+    | '/boss/author-manager/templates'
+    | '/boss/author-manager/themes'
+    | '/boss/author-manager/versions'
+    | '/boss/author-manager'
+  id:
+    | '__root__'
+    | '/'
+    | '/boss/author-manager'
+    | '/boss/author-manager/ai-models'
+    | '/boss/author-manager/analytics'
+    | '/boss/author-manager/applications'
+    | '/boss/author-manager/approvals'
+    | '/boss/author-manager/authors'
+    | '/boss/author-manager/dashboard'
+    | '/boss/author-manager/documents'
+    | '/boss/author-manager/downloads'
+    | '/boss/author-manager/licenses'
+    | '/boss/author-manager/plugins'
+    | '/boss/author-manager/products'
+    | '/boss/author-manager/reports'
+    | '/boss/author-manager/revenue'
+    | '/boss/author-manager/reviews'
+    | '/boss/author-manager/royalties'
+    | '/boss/author-manager/settings'
+    | '/boss/author-manager/source-code'
+    | '/boss/author-manager/support'
+    | '/boss/author-manager/templates'
+    | '/boss/author-manager/themes'
+    | '/boss/author-manager/versions'
+    | '/boss/author-manager/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BossAuthorManagerRoute: typeof BossAuthorManagerRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -48,22 +347,227 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/boss/author-manager': {
+      id: '/boss/author-manager'
+      path: '/boss/author-manager'
+      fullPath: '/boss/author-manager'
+      preLoaderRoute: typeof BossAuthorManagerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/boss/author-manager/': {
+      id: '/boss/author-manager/'
+      path: '/'
+      fullPath: '/boss/author-manager/'
+      preLoaderRoute: typeof BossAuthorManagerIndexRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/versions': {
+      id: '/boss/author-manager/versions'
+      path: '/versions'
+      fullPath: '/boss/author-manager/versions'
+      preLoaderRoute: typeof BossAuthorManagerVersionsRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/themes': {
+      id: '/boss/author-manager/themes'
+      path: '/themes'
+      fullPath: '/boss/author-manager/themes'
+      preLoaderRoute: typeof BossAuthorManagerThemesRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/templates': {
+      id: '/boss/author-manager/templates'
+      path: '/templates'
+      fullPath: '/boss/author-manager/templates'
+      preLoaderRoute: typeof BossAuthorManagerTemplatesRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/support': {
+      id: '/boss/author-manager/support'
+      path: '/support'
+      fullPath: '/boss/author-manager/support'
+      preLoaderRoute: typeof BossAuthorManagerSupportRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/source-code': {
+      id: '/boss/author-manager/source-code'
+      path: '/source-code'
+      fullPath: '/boss/author-manager/source-code'
+      preLoaderRoute: typeof BossAuthorManagerSourceCodeRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/settings': {
+      id: '/boss/author-manager/settings'
+      path: '/settings'
+      fullPath: '/boss/author-manager/settings'
+      preLoaderRoute: typeof BossAuthorManagerSettingsRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/royalties': {
+      id: '/boss/author-manager/royalties'
+      path: '/royalties'
+      fullPath: '/boss/author-manager/royalties'
+      preLoaderRoute: typeof BossAuthorManagerRoyaltiesRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/reviews': {
+      id: '/boss/author-manager/reviews'
+      path: '/reviews'
+      fullPath: '/boss/author-manager/reviews'
+      preLoaderRoute: typeof BossAuthorManagerReviewsRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/revenue': {
+      id: '/boss/author-manager/revenue'
+      path: '/revenue'
+      fullPath: '/boss/author-manager/revenue'
+      preLoaderRoute: typeof BossAuthorManagerRevenueRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/reports': {
+      id: '/boss/author-manager/reports'
+      path: '/reports'
+      fullPath: '/boss/author-manager/reports'
+      preLoaderRoute: typeof BossAuthorManagerReportsRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/products': {
+      id: '/boss/author-manager/products'
+      path: '/products'
+      fullPath: '/boss/author-manager/products'
+      preLoaderRoute: typeof BossAuthorManagerProductsRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/plugins': {
+      id: '/boss/author-manager/plugins'
+      path: '/plugins'
+      fullPath: '/boss/author-manager/plugins'
+      preLoaderRoute: typeof BossAuthorManagerPluginsRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/licenses': {
+      id: '/boss/author-manager/licenses'
+      path: '/licenses'
+      fullPath: '/boss/author-manager/licenses'
+      preLoaderRoute: typeof BossAuthorManagerLicensesRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/downloads': {
+      id: '/boss/author-manager/downloads'
+      path: '/downloads'
+      fullPath: '/boss/author-manager/downloads'
+      preLoaderRoute: typeof BossAuthorManagerDownloadsRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/documents': {
+      id: '/boss/author-manager/documents'
+      path: '/documents'
+      fullPath: '/boss/author-manager/documents'
+      preLoaderRoute: typeof BossAuthorManagerDocumentsRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/dashboard': {
+      id: '/boss/author-manager/dashboard'
+      path: '/dashboard'
+      fullPath: '/boss/author-manager/dashboard'
+      preLoaderRoute: typeof BossAuthorManagerDashboardRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/authors': {
+      id: '/boss/author-manager/authors'
+      path: '/authors'
+      fullPath: '/boss/author-manager/authors'
+      preLoaderRoute: typeof BossAuthorManagerAuthorsRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/approvals': {
+      id: '/boss/author-manager/approvals'
+      path: '/approvals'
+      fullPath: '/boss/author-manager/approvals'
+      preLoaderRoute: typeof BossAuthorManagerApprovalsRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/applications': {
+      id: '/boss/author-manager/applications'
+      path: '/applications'
+      fullPath: '/boss/author-manager/applications'
+      preLoaderRoute: typeof BossAuthorManagerApplicationsRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/analytics': {
+      id: '/boss/author-manager/analytics'
+      path: '/analytics'
+      fullPath: '/boss/author-manager/analytics'
+      preLoaderRoute: typeof BossAuthorManagerAnalyticsRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/ai-models': {
+      id: '/boss/author-manager/ai-models'
+      path: '/ai-models'
+      fullPath: '/boss/author-manager/ai-models'
+      preLoaderRoute: typeof BossAuthorManagerAiModelsRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
   }
 }
 
+interface BossAuthorManagerRouteChildren {
+  BossAuthorManagerAiModelsRoute: typeof BossAuthorManagerAiModelsRoute
+  BossAuthorManagerAnalyticsRoute: typeof BossAuthorManagerAnalyticsRoute
+  BossAuthorManagerApplicationsRoute: typeof BossAuthorManagerApplicationsRoute
+  BossAuthorManagerApprovalsRoute: typeof BossAuthorManagerApprovalsRoute
+  BossAuthorManagerAuthorsRoute: typeof BossAuthorManagerAuthorsRoute
+  BossAuthorManagerDashboardRoute: typeof BossAuthorManagerDashboardRoute
+  BossAuthorManagerDocumentsRoute: typeof BossAuthorManagerDocumentsRoute
+  BossAuthorManagerDownloadsRoute: typeof BossAuthorManagerDownloadsRoute
+  BossAuthorManagerLicensesRoute: typeof BossAuthorManagerLicensesRoute
+  BossAuthorManagerPluginsRoute: typeof BossAuthorManagerPluginsRoute
+  BossAuthorManagerProductsRoute: typeof BossAuthorManagerProductsRoute
+  BossAuthorManagerReportsRoute: typeof BossAuthorManagerReportsRoute
+  BossAuthorManagerRevenueRoute: typeof BossAuthorManagerRevenueRoute
+  BossAuthorManagerReviewsRoute: typeof BossAuthorManagerReviewsRoute
+  BossAuthorManagerRoyaltiesRoute: typeof BossAuthorManagerRoyaltiesRoute
+  BossAuthorManagerSettingsRoute: typeof BossAuthorManagerSettingsRoute
+  BossAuthorManagerSourceCodeRoute: typeof BossAuthorManagerSourceCodeRoute
+  BossAuthorManagerSupportRoute: typeof BossAuthorManagerSupportRoute
+  BossAuthorManagerTemplatesRoute: typeof BossAuthorManagerTemplatesRoute
+  BossAuthorManagerThemesRoute: typeof BossAuthorManagerThemesRoute
+  BossAuthorManagerVersionsRoute: typeof BossAuthorManagerVersionsRoute
+  BossAuthorManagerIndexRoute: typeof BossAuthorManagerIndexRoute
+}
+
+const BossAuthorManagerRouteChildren: BossAuthorManagerRouteChildren = {
+  BossAuthorManagerAiModelsRoute: BossAuthorManagerAiModelsRoute,
+  BossAuthorManagerAnalyticsRoute: BossAuthorManagerAnalyticsRoute,
+  BossAuthorManagerApplicationsRoute: BossAuthorManagerApplicationsRoute,
+  BossAuthorManagerApprovalsRoute: BossAuthorManagerApprovalsRoute,
+  BossAuthorManagerAuthorsRoute: BossAuthorManagerAuthorsRoute,
+  BossAuthorManagerDashboardRoute: BossAuthorManagerDashboardRoute,
+  BossAuthorManagerDocumentsRoute: BossAuthorManagerDocumentsRoute,
+  BossAuthorManagerDownloadsRoute: BossAuthorManagerDownloadsRoute,
+  BossAuthorManagerLicensesRoute: BossAuthorManagerLicensesRoute,
+  BossAuthorManagerPluginsRoute: BossAuthorManagerPluginsRoute,
+  BossAuthorManagerProductsRoute: BossAuthorManagerProductsRoute,
+  BossAuthorManagerReportsRoute: BossAuthorManagerReportsRoute,
+  BossAuthorManagerRevenueRoute: BossAuthorManagerRevenueRoute,
+  BossAuthorManagerReviewsRoute: BossAuthorManagerReviewsRoute,
+  BossAuthorManagerRoyaltiesRoute: BossAuthorManagerRoyaltiesRoute,
+  BossAuthorManagerSettingsRoute: BossAuthorManagerSettingsRoute,
+  BossAuthorManagerSourceCodeRoute: BossAuthorManagerSourceCodeRoute,
+  BossAuthorManagerSupportRoute: BossAuthorManagerSupportRoute,
+  BossAuthorManagerTemplatesRoute: BossAuthorManagerTemplatesRoute,
+  BossAuthorManagerThemesRoute: BossAuthorManagerThemesRoute,
+  BossAuthorManagerVersionsRoute: BossAuthorManagerVersionsRoute,
+  BossAuthorManagerIndexRoute: BossAuthorManagerIndexRoute,
+}
+
+const BossAuthorManagerRouteWithChildren =
+  BossAuthorManagerRoute._addFileChildren(BossAuthorManagerRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BossAuthorManagerRoute: BossAuthorManagerRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
