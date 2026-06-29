@@ -7,6 +7,8 @@ import type {
   PaginatedQuery,
   PaginatedResult,
   Product,
+  ProductVersion,
+  SourceRepo,
 } from "./types";
 
 /**
@@ -44,6 +46,21 @@ export function useLicenses(q: PaginatedQuery) {
   return useQuery({
     queryKey: ["author-manager", "licenses", q],
     queryFn: () => emptyPage<License>(q),
+  });
+}
+
+export function useSourceRepos(q: PaginatedQuery) {
+  return useQuery({
+    queryKey: ["author-manager", "source-repos", q],
+    queryFn: () => emptyPage<SourceRepo>(q),
+  });
+}
+
+export function useProductVersions(productId: string | null) {
+  return useQuery({
+    queryKey: ["author-manager", "product-versions", productId],
+    queryFn: async (): Promise<ProductVersion[]> => [],
+    enabled: !!productId,
   });
 }
 
