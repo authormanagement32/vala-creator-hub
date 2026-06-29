@@ -189,18 +189,16 @@ function RepoPanel({ repo, onScan, onRelease, busy }: { repo: Repo; onScan: () =
       </a>
 
       <div>
-        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Security scan</div>
-        <div className="grid grid-cols-4 gap-2 text-center">
-          <Sev label="Critical" n={repo.vuln_critical} tone="text-danger" />
-          <Sev label="High" n={repo.vuln_high} tone="text-danger" />
-          <Sev label="Medium" n={repo.vuln_medium} tone="text-warning" />
-          <Sev label="Low" n={repo.vuln_low} tone="text-muted-foreground" />
-        </div>
-        <div className="mt-2 text-[11px] text-muted-foreground">Last scan: {fmtDate(repo.last_scan_at)}</div>
-        <button disabled={busy} onClick={onScan} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md bg-brand px-3 py-2 text-sm font-medium text-brand-foreground hover:opacity-90 disabled:opacity-50">
+        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Security scan results</div>
+        <ScanResultsPanel
+          findings={Array.isArray(repo.scan_findings) ? repo.scan_findings : []}
+          lastScanAt={repo.last_scan_at}
+        />
+        <button data-testid="run-scan-btn" disabled={busy} onClick={onScan} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md bg-brand px-3 py-2 text-sm font-medium text-brand-foreground hover:opacity-90 disabled:opacity-50">
           <RefreshCw className="h-3.5 w-3.5" /> Run security scan
         </button>
       </div>
+
 
       <div>
         <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
