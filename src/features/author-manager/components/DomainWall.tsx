@@ -48,11 +48,12 @@ export function DomainWall<T>({
 }: DomainWallProps<T>) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [extra, setExtra] = useState("");
   const [selected, setSelected] = useState<T | null>(null);
 
   const q: PaginatedQuery = useMemo(
-    () => ({ page: 1, pageSize: 50, search, filters: { status, extra: extraFilter?.value } }),
-    [search, status, extraFilter?.value],
+    () => ({ page: 1, pageSize: 50, search, filters: { status, extra } }),
+    [search, status, extra],
   );
 
   const { data, isLoading, isError } = useQuery({
