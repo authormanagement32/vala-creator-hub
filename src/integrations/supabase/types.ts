@@ -14,16 +14,268 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audit_events: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          entity: string
+          entity_id: string | null
+          id: string
+          metadata: Json
+          severity: string
+          summary: string
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          entity: string
+          entity_id?: string | null
+          id?: string
+          metadata?: Json
+          severity?: string
+          summary: string
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          entity?: string
+          entity_id?: string | null
+          id?: string
+          metadata?: Json
+          severity?: string
+          summary?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          read_at: string | null
+          severity: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          severity?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          severity?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      product_versions: {
+        Row: {
+          changelog: string
+          id: string
+          product_id: string
+          released_at: string
+          status: string
+          version: string
+        }
+        Insert: {
+          changelog?: string
+          id?: string
+          product_id: string
+          released_at?: string
+          status?: string
+          version: string
+        }
+        Update: {
+          changelog?: string
+          id?: string
+          product_id?: string
+          released_at?: string
+          status?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_versions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          author_id: string | null
+          category: string
+          created_at: string
+          downloads: number
+          id: string
+          name: string
+          price: number
+          rating: number | null
+          status: string
+          type: string
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          author_id?: string | null
+          category?: string
+          created_at?: string
+          downloads?: number
+          id?: string
+          name: string
+          price?: number
+          rating?: number | null
+          status?: string
+          type?: string
+          updated_at?: string
+          version?: string
+        }
+        Update: {
+          author_id?: string | null
+          category?: string
+          created_at?: string
+          downloads?: number
+          id?: string
+          name?: string
+          price?: number
+          rating?: number | null
+          status?: string
+          type?: string
+          updated_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
+      source_repos: {
+        Row: {
+          build_status: string
+          created_at: string
+          default_branch: string
+          dependency_count: number
+          id: string
+          last_build_at: string | null
+          last_scan_at: string | null
+          latest_version: string | null
+          license_valid: boolean
+          name: string
+          outdated_dependencies: number
+          product_id: string | null
+          provider: string
+          updated_at: string
+          url: string
+          vuln_critical: number
+          vuln_high: number
+          vuln_low: number
+          vuln_medium: number
+        }
+        Insert: {
+          build_status?: string
+          created_at?: string
+          default_branch?: string
+          dependency_count?: number
+          id?: string
+          last_build_at?: string | null
+          last_scan_at?: string | null
+          latest_version?: string | null
+          license_valid?: boolean
+          name: string
+          outdated_dependencies?: number
+          product_id?: string | null
+          provider?: string
+          updated_at?: string
+          url: string
+          vuln_critical?: number
+          vuln_high?: number
+          vuln_low?: number
+          vuln_medium?: number
+        }
+        Update: {
+          build_status?: string
+          created_at?: string
+          default_branch?: string
+          dependency_count?: number
+          id?: string
+          last_build_at?: string | null
+          last_scan_at?: string | null
+          latest_version?: string | null
+          license_valid?: boolean
+          name?: string
+          outdated_dependencies?: number
+          product_id?: string | null
+          provider?: string
+          updated_at?: string
+          url?: string
+          vuln_critical?: number
+          vuln_high?: number
+          vuln_low?: number
+          vuln_medium?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_repos_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "boss" | "admin" | "reviewer" | "author"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +402,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["boss", "admin", "reviewer", "author"],
+    },
   },
 } as const
