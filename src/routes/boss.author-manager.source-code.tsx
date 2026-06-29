@@ -37,6 +37,7 @@ type Repo = {
   vuln_low: number;
   license_valid: boolean;
   last_scan_at: string | null;
+  scan_findings?: ScanFinding[] | null;
 };
 
 function buildTone(s: string) {
