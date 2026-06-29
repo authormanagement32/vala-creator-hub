@@ -77,3 +77,29 @@ export interface PaginatedResult<T> {
 }
 
 export type LoadState = "idle" | "loading" | "empty" | "error" | "ready";
+
+export interface SourceRepo {
+  id: string;
+  productId: string | null;
+  name: string;
+  provider: "github" | "gitlab" | "bitbucket" | "self-hosted";
+  url: string;
+  defaultBranch: string;
+  latestVersion: string | null;
+  buildStatus: "passing" | "failing" | "pending" | "unknown";
+  lastBuildAt: string | null;
+  dependencyCount: number;
+  outdatedDependencies: number;
+  vulnerabilities: { critical: number; high: number; medium: number; low: number };
+  licenseValid: boolean;
+  lastScanAt: string | null;
+}
+
+export interface ProductVersion {
+  id: string;
+  productId: string;
+  version: string;
+  changelog: string;
+  releasedAt: string;
+  status: "draft" | "published" | "archived";
+}
