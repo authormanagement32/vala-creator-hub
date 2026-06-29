@@ -1,112 +1,110 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { ExternalLink, GitBranch, RefreshCw, ShieldCheck, ShieldAlert } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { ExternalLink, GitBranch, Plus, RefreshCw, ShieldAlert, ShieldCheck, Upload } from "lucide-react";
 import { WallShell } from "@/features/author-manager/components/WallShell";
 import { FilterBar } from "@/features/author-manager/components/FilterBar";
-import { DataTable, type Column } from "@/features/author-manager/components/DataTable";
 import { StatusBadge } from "@/features/author-manager/components/StatusBadge";
 import { RightActionPanel } from "@/features/author-manager/components/RightActionPanel";
 import { AuditTimeline } from "@/features/author-manager/components/AuditTimeline";
-import { useSourceRepos, deriveState } from "@/features/author-manager/data";
+import { EmptyState } from "@/features/author-manager/components/EmptyState";
 import { fmtNumber, fmtDate } from "@/features/author-manager/format";
-import type { SourceRepo } from "@/features/author-manager/types";
+import { listRepos, createRepo, runSecurityScan, releaseRepo } from "@/lib/author-manager.functions";
 
 export const Route = createFileRoute("/boss/author-manager/source-code")({
   head: () => ({ meta: [{ title: "Source Code — Author Manager" }] }),
   component: SourceCodeWall,
 });
 
-function buildTone(s: SourceRepo["buildStatus"]) {
+type Repo = {
+  id: string;
+  product_id: string | null;
+  name: string;
+  provider: string;
+  url: string;
+  default_branch: string;
+  latest_version: string | null;
+  build_status: string;
+  last_build_at: string | null;
+  dependency_count: number;
+  outdated_dependencies: number;
+  vuln_critical: number;
+  vuln_high: number;
+  vuln_medium: number;
+  vuln_low: number;
+  license_valid: boolean;
+  last_scan_at: string | null;
+};
+
+function buildTone(s: string) {
   if (s === "passing") return "bg-success/15 text-success";
   if (s === "failing") return "bg-danger/15 text-danger";
   if (s === "pending") return "bg-warning/15 text-warning";
   return "bg-muted text-muted-foreground";
 }
 
-const columns: Column<SourceRepo>[] = [
-  {
-    id: "name",
-    header: "Repository",
-    cell: (r) => (
-      <div className="flex flex-col">
-        <span className="font-medium">{r.name}</span>
-        <span className="text-[11px] text-muted-foreground">{r.provider} · {r.defaultBranch}</span>
-      </div>
-    ),
-    width: "1.4",
-  },
-  { id: "version", header: "Latest", cell: (r) => <span className="font-mono text-[11px]">{r.latestVersion ?? "—"}</span>, width: "0.6" },
-  {
-    id: "build",
-    header: "Build",
-    cell: (r) => (
-      <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium capitalize ${buildTone(r.buildStatus)}`}>
-        {r.buildStatus}
-      </span>
-    ),
-    width: "0.6",
-  },
-  {
-    id: "deps",
-    header: "Dependencies",
-    cell: (r) => (
-      <span className="text-[12px]">
-        {fmtNumber(r.dependencyCount)}{" "}
-        {r.outdatedDependencies > 0 && (
-          <span className="text-warning">({r.outdatedDependencies} outdated)</span>
-        )}
-      </span>
-    ),
-    width: "0.9",
-  },
-  {
-    id: "vuln",
-    header: "Vulnerabilities",
-    cell: (r) => {
-      const v = r.vulnerabilities;
-      const total = v.critical + v.high + v.medium + v.low;
-      if (total === 0) return <span className="inline-flex items-center gap-1 text-success"><ShieldCheck className="h-3.5 w-3.5" /> Clean</span>;
-      return (
-        <span className="inline-flex items-center gap-1 text-danger">
-          <ShieldAlert className="h-3.5 w-3.5" /> {v.critical}C / {v.high}H / {v.medium}M
-        </span>
-      );
-    },
-    width: "1",
-  },
-  {
-    id: "license",
-    header: "License",
-    cell: (r) => <StatusBadge status={r.licenseValid ? "approved" : "rejected"} />,
-    width: "0.6",
-  },
-  { id: "lastBuild", header: "Last build", cell: (r) => fmtDate(r.lastBuildAt), width: "0.7" },
-];
-
 function SourceCodeWall() {
   const [search, setSearch] = useState("");
   const [build, setBuild] = useState("");
   const [provider, setProvider] = useState("");
-  const [selected, setSelected] = useState<SourceRepo | null>(null);
+  const [selected, setSelected] = useState<Repo | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
-  const q = useMemo(
-    () => ({ page: 1, pageSize: 50, search, filters: { build, provider } }),
-    [search, build, provider],
-  );
-  const { data, isLoading, isError } = useSourceRepos(q);
-  const state = deriveState(isLoading, isError, data);
+  const qc = useQueryClient();
+  const list = useServerFn(listRepos);
+  const create = useServerFn(createRepo);
+  const scan = useServerFn(runSecurityScan);
+  const release = useServerFn(releaseRepo);
+
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: useMemo(() => ["repos", { search, build, provider }], [search, build, provider]),
+    queryFn: () => list({ data: { search, build, provider, page: 1, pageSize: 50 } }),
+    retry: false,
+  });
+
+  const rows: Repo[] = (data as any)?.rows ?? [];
+  const total = (data as any)?.total ?? 0;
+  const accessDenied = isError && /boss|forbidden|unauthorized/i.test((error as any)?.message ?? "");
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["repos"] });
+    qc.invalidateQueries({ queryKey: ["audit"] });
+    qc.invalidateQueries({ queryKey: ["notifications"] });
+  };
+  const createM = useMutation({
+    mutationFn: (v: any) => create({ data: v }),
+    onSuccess: (r: any) => { toast.success(`Linked "${r.name}"`); invalidate(); setCreateOpen(false); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const scanM = useMutation({
+    mutationFn: (id: string) => scan({ data: { id } }),
+    onSuccess: (r: any) => { toast.success(`Scan completed on "${r.name}"`); invalidate(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const releaseM = useMutation({
+    mutationFn: (v: { id: string; version: string }) => release({ data: { ...v, changelog: "" } }),
+    onSuccess: (r: any) => { toast.success(`Released v${r.latest_version} on "${r.name}"`); invalidate(); },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   return (
     <WallShell
       title="Source Code"
       subtitle="Repository linking, release history, CI builds, dependency health, and security scans."
-      count={data?.total}
+      count={total}
       actions={
-        <button className="flex h-9 items-center gap-1.5 rounded-md border border-hairline px-2.5 text-sm hover:bg-surface-2">
-          <RefreshCw className="h-3.5 w-3.5" /> Rescan all
+        <button onClick={() => setCreateOpen(true)} className="flex h-9 items-center gap-1.5 rounded-md border border-hairline px-2.5 text-sm hover:bg-surface-2">
+          <Plus className="h-3.5 w-3.5" /> Link repository
         </button>
       }
     >
+      {accessDenied && (
+        <div className="rounded-md border border-warning/40 bg-warning/5 p-3 text-xs text-warning">
+          You need the boss role to manage repositories.
+        </div>
+      )}
       <FilterBar
         search={search}
         onSearch={setSearch}
@@ -118,14 +116,10 @@ function SourceCodeWall() {
         ]}
         status={build}
         onStatusChange={setBuild}
-        onCreate={() => {}}
+        onCreate={() => setCreateOpen(true)}
         createLabel="Link repository"
         extras={
-          <select
-            value={provider}
-            onChange={(e) => setProvider(e.target.value)}
-            className="h-9 rounded-md border border-hairline bg-surface-2 px-2 text-sm outline-none focus:border-brand"
-          >
+          <select value={provider} onChange={(e) => setProvider(e.target.value)} className="h-9 rounded-md border border-hairline bg-surface-2 px-2 text-sm outline-none focus:border-brand">
             <option value="">All providers</option>
             <option value="github">GitHub</option>
             <option value="gitlab">GitLab</option>
@@ -134,56 +128,76 @@ function SourceCodeWall() {
           </select>
         }
       />
-      <DataTable
-        columns={columns}
-        rows={data?.rows ?? []}
-        state={state}
-        rowKey={(r) => r.id}
-        onRowClick={setSelected}
-        emptyTitle="No repositories linked"
-        emptyDescription="Connect GitHub, GitLab, or Bitbucket to mirror releases, builds, dependency scans, and license validation here."
-      />
+
+      {isLoading ? (
+        <div className="rounded-md border border-hairline p-6 text-center text-xs text-muted-foreground">Loading…</div>
+      ) : rows.length === 0 ? (
+        <EmptyState title="No repositories linked" description="Click Link repository to register the first one. Releases and security scans will appear in the audit and notification feeds." />
+      ) : (
+        <div className="space-y-1">
+          {rows.map((r) => {
+            const v = r.vuln_critical + r.vuln_high + r.vuln_medium + r.vuln_low;
+            return (
+              <button key={r.id} onClick={() => setSelected(r)} className="flex w-full items-center justify-between rounded-md border border-hairline bg-surface-2 px-3 py-2 text-left text-sm hover:bg-surface">
+                <div className="flex flex-col">
+                  <span className="font-medium">{r.name}</span>
+                  <span className="text-[11px] text-muted-foreground">{r.provider} · {r.default_branch} · latest {r.latest_version ?? "—"}</span>
+                </div>
+                <div className="flex items-center gap-3 text-xs">
+                  <span className={`inline-flex items-center rounded px-1.5 py-0.5 capitalize ${buildTone(r.build_status)}`}>{r.build_status}</span>
+                  {v === 0 ? (
+                    <span className="inline-flex items-center gap-1 text-success"><ShieldCheck className="h-3.5 w-3.5" /> clean</span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-danger"><ShieldAlert className="h-3.5 w-3.5" /> {r.vuln_critical}C/{r.vuln_high}H</span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <RightActionPanel
         open={!!selected}
         onClose={() => setSelected(null)}
         title={selected?.name ?? ""}
-        subtitle={selected ? `${selected.provider} · ${selected.defaultBranch}` : undefined}
+        subtitle={selected ? `${selected.provider} · ${selected.default_branch}` : undefined}
       >
-        {selected && <RepoPanel repo={selected} />}
+        {selected && (
+          <RepoPanel
+            repo={selected}
+            busy={scanM.isPending || releaseM.isPending}
+            onScan={() => scanM.mutate(selected.id)}
+            onRelease={(version) => releaseM.mutate({ id: selected.id, version })}
+          />
+        )}
       </RightActionPanel>
+
+      {createOpen && <LinkRepoDialog onClose={() => setCreateOpen(false)} onSubmit={(v) => createM.mutate(v)} busy={createM.isPending} />}
     </WallShell>
   );
 }
 
-function RepoPanel({ repo }: { repo: SourceRepo }) {
-  const v = repo.vulnerabilities;
+function RepoPanel({ repo, onScan, onRelease, busy }: { repo: Repo; onScan: () => void; onRelease: (version: string) => void; busy: boolean }) {
+  const [version, setVersion] = useState("");
   return (
     <div className="space-y-5 text-sm">
-      <a
-        href={repo.url}
-        target="_blank"
-        rel="noreferrer"
-        className="flex items-center gap-1.5 text-xs text-brand hover:underline"
-      >
+      <a href={repo.url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs text-brand hover:underline">
         <ExternalLink className="h-3.5 w-3.5" /> {repo.url}
       </a>
-
-      <div className="grid grid-cols-2 gap-2">
-        <Stat label="Latest version" value={<span className="font-mono">{repo.latestVersion ?? "—"}</span>} />
-        <Stat label="Build" value={<span className="capitalize">{repo.buildStatus}</span>} />
-        <Stat label="Dependencies" value={fmtNumber(repo.dependencyCount)} />
-        <Stat label="Outdated" value={<span className={repo.outdatedDependencies > 0 ? "text-warning" : ""}>{fmtNumber(repo.outdatedDependencies)}</span>} />
-      </div>
 
       <div>
         <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Security scan</div>
         <div className="grid grid-cols-4 gap-2 text-center">
-          <Sev label="Critical" n={v.critical} tone="text-danger" />
-          <Sev label="High" n={v.high} tone="text-danger" />
-          <Sev label="Medium" n={v.medium} tone="text-warning" />
-          <Sev label="Low" n={v.low} tone="text-muted-foreground" />
+          <Sev label="Critical" n={repo.vuln_critical} tone="text-danger" />
+          <Sev label="High" n={repo.vuln_high} tone="text-danger" />
+          <Sev label="Medium" n={repo.vuln_medium} tone="text-warning" />
+          <Sev label="Low" n={repo.vuln_low} tone="text-muted-foreground" />
         </div>
-        <div className="mt-2 text-[11px] text-muted-foreground">Last scan: {fmtDate(repo.lastScanAt)}</div>
+        <div className="mt-2 text-[11px] text-muted-foreground">Last scan: {fmtDate(repo.last_scan_at)}</div>
+        <button disabled={busy} onClick={onScan} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md bg-brand px-3 py-2 text-sm font-medium text-brand-foreground hover:opacity-90 disabled:opacity-50">
+          <RefreshCw className="h-3.5 w-3.5" /> Run security scan
+        </button>
       </div>
 
       <div>
@@ -193,28 +207,23 @@ function RepoPanel({ repo }: { repo: SourceRepo }) {
         <ul className="space-y-1 text-xs">
           <li className="flex items-center justify-between rounded-md border border-hairline p-2">
             <span>License header</span>
-            <StatusBadge status={repo.licenseValid ? "approved" : "rejected"} />
+            <StatusBadge status={repo.license_valid ? "approved" : "rejected"} />
           </li>
           <li className="flex items-center justify-between rounded-md border border-hairline p-2">
             <span>CI build</span>
-            <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium capitalize ${buildTone(repo.buildStatus)}`}>
-              {repo.buildStatus}
-            </span>
+            <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium capitalize ${buildTone(repo.build_status)}`}>{repo.build_status}</span>
           </li>
           <li className="flex items-center justify-between rounded-md border border-hairline p-2">
-            <span>Dependency policy</span>
-            <StatusBadge status={repo.outdatedDependencies === 0 ? "approved" : "pending"} />
+            <span>Dependencies</span>
+            <span className="text-[11px]">{fmtNumber(repo.dependency_count)} ({repo.outdated_dependencies} outdated)</span>
           </li>
         </ul>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        <button className="rounded-md bg-brand px-3 py-2 text-sm font-medium text-brand-foreground hover:opacity-90">
-          Rescan now
-        </button>
-        <button className="rounded-md border border-hairline px-3 py-2 text-sm hover:bg-surface-2">
-          Sync releases
-        </button>
+        <div className="mt-2 flex items-center gap-2">
+          <input value={version} onChange={(e) => setVersion(e.target.value)} placeholder="1.2.0" className="h-9 flex-1 rounded-md border border-hairline bg-surface-2 px-2 text-sm" />
+          <button disabled={busy || !version} onClick={() => { onRelease(version); setVersion(""); }} className="flex h-9 items-center gap-1.5 rounded-md border border-hairline px-2.5 text-sm hover:bg-surface-2 disabled:opacity-50">
+            <Upload className="h-3.5 w-3.5" /> Release
+          </button>
+        </div>
       </div>
 
       <div>
@@ -225,11 +234,32 @@ function RepoPanel({ repo }: { repo: SourceRepo }) {
   );
 }
 
-function Stat({ label, value }: { label: string; value: React.ReactNode }) {
+function LinkRepoDialog({ onClose, onSubmit, busy }: { onClose: () => void; onSubmit: (v: any) => void; busy: boolean }) {
+  const [name, setName] = useState("");
+  const [provider, setProvider] = useState("github");
+  const [url, setUrl] = useState("");
+  const [branch, setBranch] = useState("main");
   return (
-    <div className="rounded-md border border-hairline bg-surface-2 p-2">
-      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="mt-1 text-sm font-medium">{value}</div>
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-lg border border-hairline bg-surface p-5 shadow-xl">
+        <div className="mb-3 text-sm font-semibold">Link repository</div>
+        <form onSubmit={(e) => { e.preventDefault(); onSubmit({ name, provider, url, default_branch: branch }); }} className="space-y-3 text-sm">
+          <label className="block"><span className="text-xs text-muted-foreground">Name</span>
+            <input required value={name} onChange={(e) => setName(e.target.value)} className="mt-1 h-9 w-full rounded-md border border-hairline bg-surface-2 px-2" /></label>
+          <label className="block"><span className="text-xs text-muted-foreground">Provider</span>
+            <select value={provider} onChange={(e) => setProvider(e.target.value)} className="mt-1 h-9 w-full rounded-md border border-hairline bg-surface-2 px-2">
+              {["github","gitlab","bitbucket","self-hosted"].map((p) => <option key={p} value={p}>{p}</option>)}
+            </select></label>
+          <label className="block"><span className="text-xs text-muted-foreground">URL</span>
+            <input required type="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://github.com/org/repo" className="mt-1 h-9 w-full rounded-md border border-hairline bg-surface-2 px-2" /></label>
+          <label className="block"><span className="text-xs text-muted-foreground">Default branch</span>
+            <input value={branch} onChange={(e) => setBranch(e.target.value)} className="mt-1 h-9 w-full rounded-md border border-hairline bg-surface-2 px-2" /></label>
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={onClose} className="rounded-md border border-hairline px-3 py-2 text-sm hover:bg-surface-2">Cancel</button>
+            <button disabled={busy} type="submit" className="rounded-md bg-brand px-3 py-2 text-sm font-medium text-brand-foreground hover:opacity-90 disabled:opacity-50">{busy ? "Linking…" : "Link"}</button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
