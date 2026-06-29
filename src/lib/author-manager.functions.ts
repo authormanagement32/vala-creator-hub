@@ -177,21 +177,31 @@ export const runSecurityScan = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await ensureBoss(context);
-    // Real scanner integration would call an external API. For now mark scan as run.
-    const patch = { last_scan_at: new Date().toISOString() };
+    // Read existing findings (populated by an external scanner integration).
+    const { data: cur, error: cerr } = await context.supabase
+      .from("source_repos").select("scan_findings,name").eq("id", data.id).single();
+    if (cerr) throw new Error(cerr.message);
+    const findings: Array<{ severity: string; dependency?: string }> = Array.isArray(cur?.scan_findings) ? cur!.scan_findings : [];
+    const count = (sev: string) => findings.filter((f) => (f.severity ?? "").toLowerCase() === sev).length;
+    const critical = count("critical"), high = count("high"), medium = count("medium"), low = count("low");
+    const patch = {
+      last_scan_at: new Date().toISOString(),
+      vuln_critical: critical, vuln_high: high, vuln_medium: medium, vuln_low: low,
+    };
     const { data: row, error } = await context.supabase.from("source_repos").update(patch).eq("id", data.id).select().single();
     if (error) throw new Error(error.message);
-    const v = (row.vuln_critical ?? 0) + (row.vuln_high ?? 0) + (row.vuln_medium ?? 0) + (row.vuln_low ?? 0);
+    const total = critical + high + medium + low;
     await logAudit(context, {
       entity: "source-repo",
       entityId: row.id,
       action: "security-scan",
-      summary: `Security scan run on "${row.name}" — ${v} finding(s)`,
-      metadata: { critical: row.vuln_critical, high: row.vuln_high, medium: row.vuln_medium, low: row.vuln_low },
-      severity: (row.vuln_critical ?? 0) > 0 ? "danger" : v > 0 ? "warn" : "success",
+      summary: `Security scan run on "${row.name}" — ${total} finding(s)`,
+      metadata: { critical, high, medium, low },
+      severity: critical > 0 ? "danger" : total > 0 ? "warn" : "success",
     });
     return row;
   });
+
 
 export const releaseRepo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
