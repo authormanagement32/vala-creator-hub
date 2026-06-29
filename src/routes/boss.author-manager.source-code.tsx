@@ -10,6 +10,7 @@ import { StatusBadge } from "@/features/author-manager/components/StatusBadge";
 import { RightActionPanel } from "@/features/author-manager/components/RightActionPanel";
 import { AuditTimeline } from "@/features/author-manager/components/AuditTimeline";
 import { EmptyState } from "@/features/author-manager/components/EmptyState";
+import { ScanResultsPanel, type ScanFinding } from "@/features/author-manager/components/ScanResultsPanel";
 import { fmtNumber, fmtDate } from "@/features/author-manager/format";
 import { listRepos, createRepo, runSecurityScan, releaseRepo } from "@/lib/author-manager.functions";
 
