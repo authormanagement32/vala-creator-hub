@@ -7,6 +7,8 @@ import type {
   PaginatedQuery,
   PaginatedResult,
   Product,
+  ProductVersion,
+  SourceRepo,
 } from "./types";
 
 /**
