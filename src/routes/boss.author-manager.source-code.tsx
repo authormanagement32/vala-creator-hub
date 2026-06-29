@@ -82,7 +82,7 @@ function SourceCodeWall() {
   });
   const scanM = useMutation({
     mutationFn: (id: string) => scan({ data: { id } }),
-    onSuccess: (r: any) => { toast.success(`Scan completed on "${r.name}"`); invalidate(); },
+    onSuccess: (r: any) => { toast.success(`Scan completed on "${r.name}"`); setSelected(r); invalidate(); },
     onError: (e: any) => toast.error(e.message),
   });
   const releaseM = useMutation({
