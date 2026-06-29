@@ -42,26 +42,32 @@ export function AuditTimeline({ entity, entityId }: { entity: string; entityId?:
   }
 
   return (
-    <ol className="space-y-2">
-      {data.map((e: any) => {
-        const Icon = ICON[(e.severity as keyof typeof ICON) ?? "info"] ?? Info;
-        const tone = TONE[(e.severity as keyof typeof TONE) ?? "info"] ?? TONE.info;
-        return (
-          <li key={e.id} className="flex gap-2 rounded-md border border-hairline bg-surface-2 p-2 text-xs">
-            <Icon className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${tone}`} />
-            <div className="flex-1">
-              <div className="font-medium">{e.summary}</div>
-              <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                <span className="font-mono">{e.action}</span>
-                <span>·</span>
-                <span>{e.actor_email ?? "system"}</span>
-                <span>·</span>
-                <span>{formatDistanceToNow(new Date(e.created_at), { addSuffix: true })}</span>
+    <div className="space-y-2" data-testid="audit-timeline">
+      <div className="flex items-center justify-end">
+        <ExportCsvButton source="audit" entity={entity} entityId={entityId} />
+      </div>
+      <ol className="space-y-2">
+        {data.map((e: any) => {
+          const Icon = ICON[(e.severity as keyof typeof ICON) ?? "info"] ?? Info;
+          const tone = TONE[(e.severity as keyof typeof TONE) ?? "info"] ?? TONE.info;
+          return (
+            <li key={e.id} data-testid="audit-event" data-action={e.action} className="flex gap-2 rounded-md border border-hairline bg-surface-2 p-2 text-xs">
+              <Icon className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${tone}`} />
+              <div className="flex-1">
+                <div className="font-medium">{e.summary}</div>
+                <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                  <span className="font-mono">{e.action}</span>
+                  <span>·</span>
+                  <span>{e.actor_email ?? "system"}</span>
+                  <span>·</span>
+                  <span>{formatDistanceToNow(new Date(e.created_at), { addSuffix: true })}</span>
+                </div>
               </div>
-            </div>
-          </li>
-        );
-      })}
-    </ol>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
   );
 }
+
