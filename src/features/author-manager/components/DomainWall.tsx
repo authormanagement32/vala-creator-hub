@@ -101,8 +101,8 @@ export function DomainWall<T>({
         extras={
           extraFilter ? (
             <select
-              value={extraFilter.value}
-              onChange={(e) => extraFilter.onChange(e.target.value)}
+              value={extra}
+              onChange={(e) => setExtra(e.target.value)}
               className="h-9 rounded-md border border-hairline bg-surface-2 px-2 text-sm outline-none focus:border-brand"
             >
               <option value="">{extraFilter.placeholder}</option>
