@@ -11,7 +11,7 @@ import { RightActionPanel } from "@/features/author-manager/components/RightActi
 import { AuditTimeline } from "@/features/author-manager/components/AuditTimeline";
 import { EmptyState } from "@/features/author-manager/components/EmptyState";
 import { ScanResultsPanel, type ScanFinding } from "@/features/author-manager/components/ScanResultsPanel";
-import { fmtNumber, fmtDate } from "@/features/author-manager/format";
+import { fmtNumber } from "@/features/author-manager/format";
 import { listRepos, createRepo, runSecurityScan, releaseRepo } from "@/lib/author-manager.functions";
 
 export const Route = createFileRoute("/boss/author-manager/source-code")({
