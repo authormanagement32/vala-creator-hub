@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { formatDistanceToNow } from "date-fns";
 import { Activity, AlertTriangle, CheckCircle2, Info } from "lucide-react";
 import { listAudit } from "@/lib/author-manager.functions";
+import { ExportCsvButton } from "./ExportCsvButton";
 
 const ICON = {
   success: CheckCircle2,
