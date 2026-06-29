@@ -4,6 +4,7 @@ import { Bell, Check } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { listNotifications, markNotificationRead } from "@/lib/author-manager.functions";
+import { ExportCsvButton } from "./ExportCsvButton";
 
 export function NotificationCenter() {
   const [open, setOpen] = useState(false);
@@ -47,11 +48,14 @@ export function NotificationCenter() {
       </button>
       {open && (
         <div className="absolute right-0 top-11 z-50 w-80 overflow-hidden rounded-md border border-hairline bg-surface shadow-xl">
-          <div className="flex items-center justify-between border-b border-hairline px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Notifications
-            {unread > 0 && <span className="rounded bg-brand/15 px-1.5 py-0.5 text-[10px] text-brand">{unread} new</span>}
+          <div className="flex items-center justify-between gap-2 border-b border-hairline px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <span className="flex items-center gap-2">Notifications
+              {unread > 0 && <span className="rounded bg-brand/15 px-1.5 py-0.5 text-[10px] text-brand">{unread} new</span>}
+            </span>
+            <ExportCsvButton source="notifications" label="Export" />
           </div>
           <div className="max-h-96 overflow-auto">
+
             {(data as any[]).length === 0 ? (
               <div className="p-6 text-center text-xs text-muted-foreground">No notifications yet.</div>
             ) : (

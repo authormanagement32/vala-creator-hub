@@ -1,0 +1,1 @@
+ALTER TABLE public.source_repos ADD COLUMN IF NOT EXISTS scan_findings jsonb NOT NULL DEFAULT '[]'::jsonb;

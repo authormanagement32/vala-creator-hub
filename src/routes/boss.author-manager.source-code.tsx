@@ -10,7 +10,8 @@ import { StatusBadge } from "@/features/author-manager/components/StatusBadge";
 import { RightActionPanel } from "@/features/author-manager/components/RightActionPanel";
 import { AuditTimeline } from "@/features/author-manager/components/AuditTimeline";
 import { EmptyState } from "@/features/author-manager/components/EmptyState";
-import { fmtNumber, fmtDate } from "@/features/author-manager/format";
+import { ScanResultsPanel, type ScanFinding } from "@/features/author-manager/components/ScanResultsPanel";
+import { fmtNumber } from "@/features/author-manager/format";
 import { listRepos, createRepo, runSecurityScan, releaseRepo } from "@/lib/author-manager.functions";
 
 export const Route = createFileRoute("/boss/author-manager/source-code")({
@@ -36,6 +37,7 @@ type Repo = {
   vuln_low: number;
   license_valid: boolean;
   last_scan_at: string | null;
+  scan_findings?: ScanFinding[] | null;
 };
 
 function buildTone(s: string) {
@@ -80,7 +82,7 @@ function SourceCodeWall() {
   });
   const scanM = useMutation({
     mutationFn: (id: string) => scan({ data: { id } }),
-    onSuccess: (r: any) => { toast.success(`Scan completed on "${r.name}"`); invalidate(); },
+    onSuccess: (r: any) => { toast.success(`Scan completed on "${r.name}"`); setSelected(r); invalidate(); },
     onError: (e: any) => toast.error(e.message),
   });
   const releaseM = useMutation({
@@ -187,18 +189,16 @@ function RepoPanel({ repo, onScan, onRelease, busy }: { repo: Repo; onScan: () =
       </a>
 
       <div>
-        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Security scan</div>
-        <div className="grid grid-cols-4 gap-2 text-center">
-          <Sev label="Critical" n={repo.vuln_critical} tone="text-danger" />
-          <Sev label="High" n={repo.vuln_high} tone="text-danger" />
-          <Sev label="Medium" n={repo.vuln_medium} tone="text-warning" />
-          <Sev label="Low" n={repo.vuln_low} tone="text-muted-foreground" />
-        </div>
-        <div className="mt-2 text-[11px] text-muted-foreground">Last scan: {fmtDate(repo.last_scan_at)}</div>
-        <button disabled={busy} onClick={onScan} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md bg-brand px-3 py-2 text-sm font-medium text-brand-foreground hover:opacity-90 disabled:opacity-50">
+        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Security scan results</div>
+        <ScanResultsPanel
+          findings={Array.isArray(repo.scan_findings) ? repo.scan_findings : []}
+          lastScanAt={repo.last_scan_at}
+        />
+        <button data-testid="run-scan-btn" disabled={busy} onClick={onScan} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md bg-brand px-3 py-2 text-sm font-medium text-brand-foreground hover:opacity-90 disabled:opacity-50">
           <RefreshCw className="h-3.5 w-3.5" /> Run security scan
         </button>
       </div>
+
 
       <div>
         <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -264,11 +264,3 @@ function LinkRepoDialog({ onClose, onSubmit, busy }: { onClose: () => void; onSu
   );
 }
 
-function Sev({ label, n, tone }: { label: string; n: number; tone: string }) {
-  return (
-    <div className="rounded-md border border-hairline bg-surface-2 p-2">
-      <div className={`text-base font-semibold ${tone}`}>{n}</div>
-      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
-    </div>
-  );
-}
