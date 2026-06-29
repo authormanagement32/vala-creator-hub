@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { LoadState } from "../types";
 import { EmptyState } from "./EmptyState";
 
 export interface Column<T> {

@@ -10,33 +10,99 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BossAuthorManagerRouteImport } from './routes/boss.author-manager'
+import { Route as BossAuthorManagerIndexRouteImport } from './routes/boss.author-manager.index'
+import { Route as BossAuthorManagerDashboardRouteImport } from './routes/boss.author-manager.dashboard'
+import { Route as BossAuthorManagerAuthorsRouteImport } from './routes/boss.author-manager.authors'
+import { Route as BossAuthorManagerApplicationsRouteImport } from './routes/boss.author-manager.applications'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BossAuthorManagerRoute = BossAuthorManagerRouteImport.update({
+  id: '/boss/author-manager',
+  path: '/boss/author-manager',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BossAuthorManagerIndexRoute = BossAuthorManagerIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => BossAuthorManagerRoute,
+} as any)
+const BossAuthorManagerDashboardRoute =
+  BossAuthorManagerDashboardRouteImport.update({
+    id: '/dashboard',
+    path: '/dashboard',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
+const BossAuthorManagerAuthorsRoute =
+  BossAuthorManagerAuthorsRouteImport.update({
+    id: '/authors',
+    path: '/authors',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
+const BossAuthorManagerApplicationsRoute =
+  BossAuthorManagerApplicationsRouteImport.update({
+    id: '/applications',
+    path: '/applications',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/boss/author-manager': typeof BossAuthorManagerRouteWithChildren
+  '/boss/author-manager/applications': typeof BossAuthorManagerApplicationsRoute
+  '/boss/author-manager/authors': typeof BossAuthorManagerAuthorsRoute
+  '/boss/author-manager/dashboard': typeof BossAuthorManagerDashboardRoute
+  '/boss/author-manager/': typeof BossAuthorManagerIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/boss/author-manager/applications': typeof BossAuthorManagerApplicationsRoute
+  '/boss/author-manager/authors': typeof BossAuthorManagerAuthorsRoute
+  '/boss/author-manager/dashboard': typeof BossAuthorManagerDashboardRoute
+  '/boss/author-manager': typeof BossAuthorManagerIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/boss/author-manager': typeof BossAuthorManagerRouteWithChildren
+  '/boss/author-manager/applications': typeof BossAuthorManagerApplicationsRoute
+  '/boss/author-manager/authors': typeof BossAuthorManagerAuthorsRoute
+  '/boss/author-manager/dashboard': typeof BossAuthorManagerDashboardRoute
+  '/boss/author-manager/': typeof BossAuthorManagerIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/boss/author-manager'
+    | '/boss/author-manager/applications'
+    | '/boss/author-manager/authors'
+    | '/boss/author-manager/dashboard'
+    | '/boss/author-manager/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/boss/author-manager/applications'
+    | '/boss/author-manager/authors'
+    | '/boss/author-manager/dashboard'
+    | '/boss/author-manager'
+  id:
+    | '__root__'
+    | '/'
+    | '/boss/author-manager'
+    | '/boss/author-manager/applications'
+    | '/boss/author-manager/authors'
+    | '/boss/author-manager/dashboard'
+    | '/boss/author-manager/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BossAuthorManagerRoute: typeof BossAuthorManagerRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +114,64 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/boss/author-manager': {
+      id: '/boss/author-manager'
+      path: '/boss/author-manager'
+      fullPath: '/boss/author-manager'
+      preLoaderRoute: typeof BossAuthorManagerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/boss/author-manager/': {
+      id: '/boss/author-manager/'
+      path: '/'
+      fullPath: '/boss/author-manager/'
+      preLoaderRoute: typeof BossAuthorManagerIndexRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/dashboard': {
+      id: '/boss/author-manager/dashboard'
+      path: '/dashboard'
+      fullPath: '/boss/author-manager/dashboard'
+      preLoaderRoute: typeof BossAuthorManagerDashboardRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/authors': {
+      id: '/boss/author-manager/authors'
+      path: '/authors'
+      fullPath: '/boss/author-manager/authors'
+      preLoaderRoute: typeof BossAuthorManagerAuthorsRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
+    '/boss/author-manager/applications': {
+      id: '/boss/author-manager/applications'
+      path: '/applications'
+      fullPath: '/boss/author-manager/applications'
+      preLoaderRoute: typeof BossAuthorManagerApplicationsRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
   }
 }
 
+interface BossAuthorManagerRouteChildren {
+  BossAuthorManagerApplicationsRoute: typeof BossAuthorManagerApplicationsRoute
+  BossAuthorManagerAuthorsRoute: typeof BossAuthorManagerAuthorsRoute
+  BossAuthorManagerDashboardRoute: typeof BossAuthorManagerDashboardRoute
+  BossAuthorManagerIndexRoute: typeof BossAuthorManagerIndexRoute
+}
+
+const BossAuthorManagerRouteChildren: BossAuthorManagerRouteChildren = {
+  BossAuthorManagerApplicationsRoute: BossAuthorManagerApplicationsRoute,
+  BossAuthorManagerAuthorsRoute: BossAuthorManagerAuthorsRoute,
+  BossAuthorManagerDashboardRoute: BossAuthorManagerDashboardRoute,
+  BossAuthorManagerIndexRoute: BossAuthorManagerIndexRoute,
+}
+
+const BossAuthorManagerRouteWithChildren =
+  BossAuthorManagerRoute._addFileChildren(BossAuthorManagerRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BossAuthorManagerRoute: BossAuthorManagerRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
