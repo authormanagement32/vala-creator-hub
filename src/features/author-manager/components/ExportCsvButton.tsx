@@ -38,7 +38,7 @@ function buildFilename(opts: {
   from?: string;
   to?: string;
 }): string {
-  const parts = [opts.source];
+  const parts: string[] = [opts.source];
   if (opts.entity) parts.push(opts.entity);
   if (opts.entityId) parts.push(opts.entityId.slice(0, 8));
   const range =
