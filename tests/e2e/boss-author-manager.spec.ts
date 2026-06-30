@@ -1,4 +1,5 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page, type Download } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 
 /**
  * End-to-end test for the Author Manager Boss Panel.
@@ -113,4 +114,94 @@ test.describe.serial("Boss Panel · Author Manager", () => {
     await expectToast(page, /Released v1\.0\.0/i);
     await expectAudit(page, "release");
   });
+
+  test("CSV export: audit (filtered by action + date range) downloads expected rows", async ({ page }) => {
+    await page.goto(`${BASE}/boss/author-manager/source-code`);
+    await page.getByRole("button", { name: new RegExp(repoName) }).first().click();
+
+    // Open the scoped audit export dialog.
+    await page.getByTestId("export-audit-btn").first().click();
+    await expect(page.getByTestId("export-audit-dialog")).toBeVisible();
+
+    // Date range = today (covers the rows created in earlier tests in this serial run).
+    const today = new Date().toISOString().slice(0, 10);
+    await page.getByTestId("export-from").fill(today);
+    await page.getByTestId("export-to").fill(today);
+
+    // Filter to security-scan + release actions.
+    await page.getByTestId("export-action-security-scan").click();
+    await page.getByTestId("export-action-release").click();
+
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByTestId("export-download-btn").click(),
+    ]);
+
+    await assertCsvContains(download, {
+      filenameIncludes: ["audit", "source-repo", today],
+      headerIncludes: ["created_at", "entity", "action", "severity", "summary"],
+      actionsRequired: ["security-scan", "release"],
+      actionsForbidden: ["create", "update", "delete", "link"],
+    });
+  });
+
+  test("CSV export: notifications for date range downloads recent rows", async ({ page }) => {
+    await page.goto(`${BASE}/boss/author-manager/dashboard`);
+
+    // Open the notifications bell, then the global export dialog.
+    await page.locator("button:has(svg.lucide-bell)").first().click();
+    await page.getByTestId("export-notifications-btn").click();
+    await expect(page.getByTestId("export-notifications-dialog")).toBeVisible();
+
+    const today = new Date().toISOString().slice(0, 10);
+    await page.getByTestId("export-from").fill(today);
+    await page.getByTestId("export-to").fill(today);
+
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByTestId("export-download-btn").click(),
+    ]);
+
+    await assertCsvContains(download, {
+      filenameIncludes: ["notifications", today],
+      headerIncludes: ["created_at", "title", "severity"],
+      bodyMustMatch: [/security scan/i, /released v/i],
+    });
+  });
 });
+
+async function assertCsvContains(
+  download: Download,
+  opts: {
+    filenameIncludes?: string[];
+    headerIncludes?: string[];
+    actionsRequired?: string[];
+    actionsForbidden?: string[];
+    bodyMustMatch?: RegExp[];
+  },
+) {
+  const name = download.suggestedFilename();
+  for (const f of opts.filenameIncludes ?? []) {
+    expect(name, `filename should include "${f}"`).toContain(f);
+  }
+  expect(name.endsWith(".csv")).toBeTruthy();
+
+  const path = await download.path();
+  expect(path, "download should have a local path").toBeTruthy();
+  const text = await readFile(path!, "utf8");
+  const [header, ...rows] = text.split(/\r?\n/).filter(Boolean);
+  expect(rows.length, "csv should have at least one data row").toBeGreaterThan(0);
+
+  for (const col of opts.headerIncludes ?? []) {
+    expect(header, `header should include "${col}"`).toContain(col);
+  }
+  for (const a of opts.actionsRequired ?? []) {
+    expect(rows.some((r) => r.includes(`,${a},`)), `expected action "${a}"`).toBeTruthy();
+  }
+  for (const a of opts.actionsForbidden ?? []) {
+    expect(rows.some((r) => r.includes(`,${a},`)), `unexpected action "${a}"`).toBeFalsy();
+  }
+  for (const re of opts.bodyMustMatch ?? []) {
+    expect(text).toMatch(re);
+  }
+}

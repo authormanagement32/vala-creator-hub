@@ -300,6 +300,8 @@ export const exportAuditCsv = createServerFn({ method: "POST" })
     to: z.string().optional(),
     entity: z.string().optional(),
     entityId: z.string().uuid().optional(),
+    actions: z.array(z.string()).optional(),
+    severities: z.array(z.enum(["info","warn","danger","success"])).optional(),
   }).parse(d))
   .handler(async ({ data, context }) => {
     await ensureBoss(context);
@@ -308,6 +310,8 @@ export const exportAuditCsv = createServerFn({ method: "POST" })
     if (data.to) q = q.lte("created_at", data.to);
     if (data.entity) q = q.eq("entity", data.entity);
     if (data.entityId) q = q.eq("entity_id", data.entityId);
+    if (data.actions?.length) q = q.in("action", data.actions);
+    if (data.severities?.length) q = q.in("severity", data.severities);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     const csv = toCsv(rows ?? [], ["created_at","actor_email","entity","entity_id","action","severity","summary","metadata"]);
@@ -319,6 +323,8 @@ export const exportNotificationsCsv = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({
     from: z.string().optional(),
     to: z.string().optional(),
+    severities: z.array(z.enum(["info","warn","danger","success"])).optional(),
+    unreadOnly: z.boolean().optional(),
   }).parse(d))
   .handler(async ({ data, context }) => {
     await ensureBoss(context);
@@ -326,6 +332,8 @@ export const exportNotificationsCsv = createServerFn({ method: "POST" })
     let q = supabaseAdmin.from("notifications").select("*").order("created_at", { ascending: false }).limit(10000);
     if (data.from) q = q.gte("created_at", data.from);
     if (data.to) q = q.lte("created_at", data.to);
+    if (data.severities?.length) q = q.in("severity", data.severities);
+    if (data.unreadOnly) q = q.is("read_at", null);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     const csv = toCsv(rows ?? [], ["created_at","user_id","title","body","severity","link","read_at"]);
