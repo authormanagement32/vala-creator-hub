@@ -335,6 +335,7 @@ export const exportNotificationsCsv = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data, context }) => {
     await ensureBoss(context);
+    assertDateRange(data.from, data.to);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let q = supabaseAdmin.from("notifications").select("*").order("created_at", { ascending: false }).limit(10000);
     if (data.from) q = q.gte("created_at", data.from);
