@@ -249,6 +249,17 @@ export function ExportCsvButton({
                   {entityId ? ` · ${entityId.slice(0, 8)}…` : ""}
                 </div>
               )}
+              {(rangeInvalid || error) && (
+                <div
+                  data-testid="export-error"
+                  role="alert"
+                  className="rounded-md border border-danger/40 bg-danger/10 px-2 py-1.5 text-[11px] text-danger"
+                >
+                  {rangeInvalid
+                    ? "Invalid date range: 'from' must be on or before 'to'."
+                    : error}
+                </div>
+              )}
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   onClick={() => setOpen(false)}
@@ -257,7 +268,7 @@ export function ExportCsvButton({
                   Cancel
                 </button>
                 <button
-                  disabled={busy}
+                  disabled={busy || rangeInvalid}
                   onClick={run}
                   data-testid="export-download-btn"
                   className="rounded-md bg-brand px-3 py-2 text-sm font-medium text-brand-foreground hover:opacity-90 disabled:opacity-50"
