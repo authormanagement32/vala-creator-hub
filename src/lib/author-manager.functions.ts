@@ -356,9 +356,17 @@ export const claimBossRole = createServerFn({ method: "POST" })
   });
 
 
-export const whoAmI = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { data } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "boss" });
-    return { userId: context.userId, email: context.claims?.email ?? null, isBoss: !!data };
+export const whoAmI = createServerFn({ method: "GET" }).handler(async () => {
+  const { getRequestHeader } = await import("@tanstack/react-start/server");
+  const auth = getRequestHeader("authorization");
+  if (!auth) return { authed: false, userId: null, email: null, isBoss: false };
+  const { createClient } = await import("@supabase/supabase-js");
+  const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
+    global: { headers: { Authorization: auth } },
+    auth: { persistSession: false, autoRefreshToken: false },
   });
+  const { data: userRes } = await sb.auth.getUser();
+  if (!userRes?.user) return { authed: false, userId: null, email: null, isBoss: false };
+  const { data } = await sb.rpc("has_role", { _user_id: userRes.user.id, _role: "boss" });
+  return { authed: true, userId: userRes.user.id, email: userRes.user.email ?? null, isBoss: !!data };
+});
