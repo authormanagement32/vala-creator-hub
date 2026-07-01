@@ -83,6 +83,13 @@ export function ExportCsvButton({
   }
 
   async function run() {
+    setError(null);
+    if (rangeInvalid) {
+      const msg = "Invalid date range: 'from' must be on or before 'to'.";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
     setBusy(true);
     try {
       const fromIso = from ? new Date(from).toISOString() : undefined;
@@ -108,7 +115,10 @@ export function ExportCsvButton({
               },
             });
       if (!res.count) {
-        toast.info("No rows for the selected filters.");
+        // Still download so caller has a headers-only report + show empty state in-dialog.
+        const name = buildFilename({ source, entity, entityId, from, to });
+        downloadCsv(name, res.csv || "");
+        toast.info("No rows for the selected filters — exported headers only.");
       } else {
         const name = buildFilename({ source, entity, entityId, from, to });
         downloadCsv(name, res.csv);
@@ -116,6 +126,7 @@ export function ExportCsvButton({
       }
       setOpen(false);
     } catch (e: any) {
+      setError(e.message ?? "Export failed");
       toast.error(e.message ?? "Export failed");
     } finally {
       setBusy(false);
