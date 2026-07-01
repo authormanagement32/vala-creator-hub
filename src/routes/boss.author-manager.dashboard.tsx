@@ -27,8 +27,8 @@ function DashboardWall() {
     onSuccess: () => { toast.success("Boss role claimed"); qc.invalidateQueries(); },
     onError: (e: any) => toast.error(e.message),
   });
-  const needsAuth = meQ.isError && /unauthorized|authorization/i.test((meQ.error as any)?.message ?? "");
-  const needsClaim = meQ.data && !meQ.data.isBoss;
+  const needsAuth = meQ.data && !meQ.data.authed;
+  const needsClaim = meQ.data && meQ.data.authed && !meQ.data.isBoss;
 
   return (
     <WallShell
