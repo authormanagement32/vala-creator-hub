@@ -293,6 +293,12 @@ function toCsv(rows: Array<Record<string, unknown>>, columns: string[]): string 
   return header + "\n" + body;
 }
 
+function assertDateRange(from?: string, to?: string) {
+  if (from && to && new Date(from).getTime() > new Date(to).getTime()) {
+    throw new Error("Invalid date range: 'from' must be on or before 'to'.");
+  }
+}
+
 export const exportAuditCsv = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({
@@ -305,6 +311,7 @@ export const exportAuditCsv = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data, context }) => {
     await ensureBoss(context);
+    assertDateRange(data.from, data.to);
     let q = context.supabase.from("audit_events").select("*").order("created_at", { ascending: false }).limit(10000);
     if (data.from) q = q.gte("created_at", data.from);
     if (data.to) q = q.lte("created_at", data.to);
