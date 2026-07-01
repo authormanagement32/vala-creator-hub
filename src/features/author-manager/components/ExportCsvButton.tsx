@@ -71,8 +71,12 @@ export function ExportCsvButton({
   const [severities, setSeverities] = useState<string[]>([]);
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const auditFn = useServerFn(exportAuditCsv);
   const notifFn = useServerFn(exportNotificationsCsv);
+
+  const rangeInvalid =
+    !!from && !!to && new Date(from).getTime() > new Date(to).getTime();
 
   function toggle(list: string[], setter: (v: string[]) => void, value: string) {
     setter(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
