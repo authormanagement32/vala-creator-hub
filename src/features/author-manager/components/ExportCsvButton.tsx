@@ -71,14 +71,25 @@ export function ExportCsvButton({
   const [severities, setSeverities] = useState<string[]>([]);
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const auditFn = useServerFn(exportAuditCsv);
   const notifFn = useServerFn(exportNotificationsCsv);
+
+  const rangeInvalid =
+    !!from && !!to && new Date(from).getTime() > new Date(to).getTime();
 
   function toggle(list: string[], setter: (v: string[]) => void, value: string) {
     setter(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
   }
 
   async function run() {
+    setError(null);
+    if (rangeInvalid) {
+      const msg = "Invalid date range: 'from' must be on or before 'to'.";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
     setBusy(true);
     try {
       const fromIso = from ? new Date(from).toISOString() : undefined;
@@ -104,7 +115,10 @@ export function ExportCsvButton({
               },
             });
       if (!res.count) {
-        toast.info("No rows for the selected filters.");
+        // Still download so caller has a headers-only report + show empty state in-dialog.
+        const name = buildFilename({ source, entity, entityId, from, to });
+        downloadCsv(name, res.csv || "");
+        toast.info("No rows for the selected filters — exported headers only.");
       } else {
         const name = buildFilename({ source, entity, entityId, from, to });
         downloadCsv(name, res.csv);
@@ -112,6 +126,7 @@ export function ExportCsvButton({
       }
       setOpen(false);
     } catch (e: any) {
+      setError(e.message ?? "Export failed");
       toast.error(e.message ?? "Export failed");
     } finally {
       setBusy(false);
@@ -234,6 +249,17 @@ export function ExportCsvButton({
                   {entityId ? ` · ${entityId.slice(0, 8)}…` : ""}
                 </div>
               )}
+              {(rangeInvalid || error) && (
+                <div
+                  data-testid="export-error"
+                  role="alert"
+                  className="rounded-md border border-danger/40 bg-danger/10 px-2 py-1.5 text-[11px] text-danger"
+                >
+                  {rangeInvalid
+                    ? "Invalid date range: 'from' must be on or before 'to'."
+                    : error}
+                </div>
+              )}
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   onClick={() => setOpen(false)}
@@ -242,7 +268,7 @@ export function ExportCsvButton({
                   Cancel
                 </button>
                 <button
-                  disabled={busy}
+                  disabled={busy || rangeInvalid}
                   onClick={run}
                   data-testid="export-download-btn"
                   className="rounded-md bg-brand px-3 py-2 text-sm font-medium text-brand-foreground hover:opacity-90 disabled:opacity-50"
