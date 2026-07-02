@@ -176,21 +176,31 @@ export function ExportCsvButton({
                 <label className="block">
                   <span className="text-xs text-muted-foreground">From</span>
                   <input
+                    ref={fromRef}
                     type="date"
                     value={from}
                     onChange={(e) => setFrom(e.target.value)}
                     data-testid="export-from"
-                    className="mt-1 h-9 w-full rounded-md border border-hairline bg-surface-2 px-2"
+                    aria-invalid={rangeInvalid || undefined}
+                    aria-describedby={rangeInvalid ? "export-error-msg" : undefined}
+                    className={`mt-1 h-9 w-full rounded-md border bg-surface-2 px-2 ${
+                      rangeInvalid ? "border-danger" : "border-hairline"
+                    }`}
                   />
                 </label>
                 <label className="block">
                   <span className="text-xs text-muted-foreground">To</span>
                   <input
+                    ref={toRef}
                     type="date"
                     value={to}
                     onChange={(e) => setTo(e.target.value)}
                     data-testid="export-to"
-                    className="mt-1 h-9 w-full rounded-md border border-hairline bg-surface-2 px-2"
+                    aria-invalid={rangeInvalid || undefined}
+                    aria-describedby={rangeInvalid ? "export-error-msg" : undefined}
+                    className={`mt-1 h-9 w-full rounded-md border bg-surface-2 px-2 ${
+                      rangeInvalid ? "border-danger" : "border-hairline"
+                    }`}
                   />
                 </label>
               </div>
