@@ -322,6 +322,24 @@ export const exportAuditCsv = createServerFn({ method: "POST" })
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     const csv = toCsv(rows ?? [], ["created_at","actor_email","entity","entity_id","action","severity","summary","metadata"]);
+    await logAudit(context, {
+      entity: "audit-export",
+      entityId: null,
+      action: "export-csv",
+      summary: `Exported ${rows?.length ?? 0} audit event(s) to CSV`,
+      metadata: {
+        source: "audit_events",
+        from: data.from ?? null,
+        to: data.to ?? null,
+        entity: data.entity ?? null,
+        entity_id: data.entityId ?? null,
+        actions: data.actions ?? null,
+        severities: data.severities ?? null,
+        count: rows?.length ?? 0,
+      },
+      severity: "info",
+      notify: false,
+    });
     return { csv, count: rows?.length ?? 0 };
   });
 
