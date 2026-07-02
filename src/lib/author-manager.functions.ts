@@ -261,14 +261,21 @@ export const listAudit = createServerFn({ method: "GET" })
   });
 
 export const listNotifications = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
+  .handler(async () => {
+    const { getRequestHeader } = await import("@tanstack/react-start/server");
+    const auth = getRequestHeader("authorization");
+    if (!auth) return [];
+    const { createClient } = await import("@supabase/supabase-js");
+    const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
+      global: { headers: { Authorization: auth } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data, error } = await sb
       .from("notifications")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(50);
-    if (error) throw new Error(error.message);
+    if (error) return [];
     return data ?? [];
   });
 
