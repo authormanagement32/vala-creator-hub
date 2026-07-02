@@ -75,9 +75,23 @@ export function ExportCsvButton({
   const [error, setError] = useState<string | null>(null);
   const auditFn = useServerFn(exportAuditCsv);
   const notifFn = useServerFn(exportNotificationsCsv);
+  const fromRef = useRef<HTMLInputElement | null>(null);
+  const toRef = useRef<HTMLInputElement | null>(null);
 
   const rangeInvalid =
     !!from && !!to && new Date(from).getTime() > new Date(to).getTime();
+  const disabledReason = rangeInvalid
+    ? "Fix the invalid date range before exporting."
+    : busy
+    ? "Export in progress…"
+    : null;
+
+  useEffect(() => {
+    if (rangeInvalid) {
+      // Move focus to the 'to' field — it's the one the user most recently made invalid.
+      toRef.current?.focus();
+    }
+  }, [rangeInvalid]);
 
   function toggle(list: string[], setter: (v: string[]) => void, value: string) {
     setter(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
@@ -88,6 +102,7 @@ export function ExportCsvButton({
     if (rangeInvalid) {
       const msg = "Invalid date range: 'from' must be on or before 'to'.";
       setError(msg);
+      toRef.current?.focus();
       toast.error(msg);
       return;
     }
