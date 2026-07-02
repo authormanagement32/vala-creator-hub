@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 import { exportAuditCsv, exportNotificationsCsv } from "@/lib/author-manager.functions";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type Source = "audit" | "notifications";
 
@@ -74,9 +75,23 @@ export function ExportCsvButton({
   const [error, setError] = useState<string | null>(null);
   const auditFn = useServerFn(exportAuditCsv);
   const notifFn = useServerFn(exportNotificationsCsv);
+  const fromRef = useRef<HTMLInputElement | null>(null);
+  const toRef = useRef<HTMLInputElement | null>(null);
 
   const rangeInvalid =
     !!from && !!to && new Date(from).getTime() > new Date(to).getTime();
+  const disabledReason = rangeInvalid
+    ? "Fix the invalid date range before exporting."
+    : busy
+    ? "Export in progress…"
+    : null;
+
+  useEffect(() => {
+    if (rangeInvalid) {
+      // Move focus to the 'to' field — it's the one the user most recently made invalid.
+      toRef.current?.focus();
+    }
+  }, [rangeInvalid]);
 
   function toggle(list: string[], setter: (v: string[]) => void, value: string) {
     setter(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
@@ -87,6 +102,7 @@ export function ExportCsvButton({
     if (rangeInvalid) {
       const msg = "Invalid date range: 'from' must be on or before 'to'.";
       setError(msg);
+      toRef.current?.focus();
       toast.error(msg);
       return;
     }
@@ -160,21 +176,31 @@ export function ExportCsvButton({
                 <label className="block">
                   <span className="text-xs text-muted-foreground">From</span>
                   <input
+                    ref={fromRef}
                     type="date"
                     value={from}
                     onChange={(e) => setFrom(e.target.value)}
                     data-testid="export-from"
-                    className="mt-1 h-9 w-full rounded-md border border-hairline bg-surface-2 px-2"
+                    aria-invalid={rangeInvalid || undefined}
+                    aria-describedby={rangeInvalid ? "export-error-msg" : undefined}
+                    className={`mt-1 h-9 w-full rounded-md border bg-surface-2 px-2 ${
+                      rangeInvalid ? "border-danger" : "border-hairline"
+                    }`}
                   />
                 </label>
                 <label className="block">
                   <span className="text-xs text-muted-foreground">To</span>
                   <input
+                    ref={toRef}
                     type="date"
                     value={to}
                     onChange={(e) => setTo(e.target.value)}
                     data-testid="export-to"
-                    className="mt-1 h-9 w-full rounded-md border border-hairline bg-surface-2 px-2"
+                    aria-invalid={rangeInvalid || undefined}
+                    aria-describedby={rangeInvalid ? "export-error-msg" : undefined}
+                    className={`mt-1 h-9 w-full rounded-md border bg-surface-2 px-2 ${
+                      rangeInvalid ? "border-danger" : "border-hairline"
+                    }`}
                   />
                 </label>
               </div>
@@ -251,8 +277,11 @@ export function ExportCsvButton({
               )}
               {(rangeInvalid || error) && (
                 <div
+                  id="export-error-msg"
                   data-testid="export-error"
                   role="alert"
+                  aria-live="assertive"
+                  aria-atomic="true"
                   className="rounded-md border border-danger/40 bg-danger/10 px-2 py-1.5 text-[11px] text-danger"
                 >
                   {rangeInvalid
@@ -267,14 +296,29 @@ export function ExportCsvButton({
                 >
                   Cancel
                 </button>
-                <button
-                  disabled={busy || rangeInvalid}
-                  onClick={run}
-                  data-testid="export-download-btn"
-                  className="rounded-md bg-brand px-3 py-2 text-sm font-medium text-brand-foreground hover:opacity-90 disabled:opacity-50"
-                >
-                  {busy ? "Exporting…" : "Download"}
-                </button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span tabIndex={disabledReason ? 0 : -1} aria-describedby={disabledReason ? "export-disabled-tip" : undefined}>
+                        <button
+                          disabled={busy || rangeInvalid}
+                          aria-disabled={busy || rangeInvalid || undefined}
+                          onClick={run}
+                          data-testid="export-download-btn"
+                          title={disabledReason ?? undefined}
+                          className="rounded-md bg-brand px-3 py-2 text-sm font-medium text-brand-foreground hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {busy ? "Exporting…" : "Download"}
+                        </button>
+                      </span>
+                    </TooltipTrigger>
+                    {disabledReason && (
+                      <TooltipContent id="export-disabled-tip" role="tooltip">
+                        {disabledReason}
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             </div>
           </div>

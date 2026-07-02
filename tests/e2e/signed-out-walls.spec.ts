@@ -31,29 +31,51 @@ test.describe("Signed-out · every wall renders", () => {
       const consoleErrors: string[] = [];
       page.on("pageerror", (e) => consoleErrors.push(String(e)));
 
+      // Track auth-gated server-fn responses so we can prove APIs are actually blocked.
+      const gatedResponses: { url: string; status: number; unauthorized: boolean }[] = [];
+      page.on("response", async (resp) => {
+        const url = resp.url();
+        if (!url.includes("/_serverFn/")) return;
+        // whoAmI is deliberately public and returns { authed: false }.
+        if (/whoAmI/i.test(url)) return;
+        let unauthorized = false;
+        try {
+          const text = await resp.text();
+          unauthorized = /Unauthorized|Forbidden|No authorization header/i.test(text);
+        } catch {}
+        gatedResponses.push({ url, status: resp.status(), unauthorized });
+      });
+
       const resp = await page.goto(`${BASE}${wall.to}`, { waitUntil: "domcontentloaded" });
       expect(resp?.status(), "route should not 5xx").toBeLessThan(500);
 
-      // App shell / top bar always renders.
       const shell = page.locator("body");
       await expect(shell).toBeVisible();
       const bodyText = (await shell.innerText()).trim();
       expect(bodyText.length, "page must not be blank").toBeGreaterThan(20);
 
-      // Top-bar navigation is present with the current wall label.
       await expect(page.getByRole("link", { name: new RegExp(`^${wall.label}$`, "i") }).first()).toBeVisible();
 
-      // Auth-gated walls surface a "Sign in" affordance somewhere on the page.
-      // Dashboard has an explicit banner; other walls surface it via the auth
-      // banner or via a toast when the data query fires.
-      await page.waitForTimeout(600);
+      await page.waitForTimeout(800);
       const hasSignIn =
         (await page.getByRole("link", { name: /sign in/i }).count()) > 0 ||
         (await page.getByRole("button", { name: /sign in/i }).count()) > 0 ||
         (await page.getByText(/sign in/i).count()) > 0;
       expect(hasSignIn, `wall "${wall.label}" should surface a sign-in affordance`).toBeTruthy();
 
-      // Uncaught runtime errors are not acceptable on any wall.
+      // If the wall fired any auth-gated server fn, it must have been blocked
+      // (either HTTP 401/403 or a serialized Unauthorized error payload).
+      if (gatedResponses.length) {
+        const blocked = gatedResponses.every(
+          (r) => r.status === 401 || r.status === 403 || r.unauthorized,
+        );
+        expect(
+          blocked,
+          `wall "${wall.label}" auth-gated APIs must be blocked: ${JSON.stringify(gatedResponses)}`,
+        ).toBeTruthy();
+      }
+
+      // Blocked APIs must never surface as uncaught runtime errors.
       expect(consoleErrors, `no uncaught page errors on ${wall.to}`).toEqual([]);
     });
   }
