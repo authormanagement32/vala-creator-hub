@@ -363,6 +363,22 @@ export const exportNotificationsCsv = createServerFn({ method: "POST" })
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     const csv = toCsv(rows ?? [], ["created_at","user_id","title","body","severity","link","read_at"]);
+    await logAudit(context, {
+      entity: "notification-export",
+      entityId: null,
+      action: "export-csv",
+      summary: `Exported ${rows?.length ?? 0} notification(s) to CSV`,
+      metadata: {
+        source: "notifications",
+        from: data.from ?? null,
+        to: data.to ?? null,
+        severities: data.severities ?? null,
+        unread_only: !!data.unreadOnly,
+        count: rows?.length ?? 0,
+      },
+      severity: "info",
+      notify: false,
+    });
     return { csv, count: rows?.length ?? 0 };
   });
 
