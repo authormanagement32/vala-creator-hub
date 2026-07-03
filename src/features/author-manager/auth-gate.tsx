@@ -72,15 +72,6 @@ if (typeof window !== "undefined") {
     getState: () => current,
   };
 }
-  return useSyncExternalStore(
-    (cb) => {
-      listeners.add(cb);
-      return () => listeners.delete(cb);
-    },
-    () => current,
-    () => current,
-  );
-}
 
 /**
  * Subscribe a QueryClient so every query/mutation error is classified once
