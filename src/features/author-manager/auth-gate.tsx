@@ -62,6 +62,26 @@ export function useAuthGate(): AuthGateState {
   );
 }
 
+// Expose a tiny hook on window so e2e tests can drive the centralized
+// gate without a real 401/403 round-trip. It's a UI-only signal — no
+// privileged action is taken here.
+if (typeof window !== "undefined") {
+  (window as unknown as { __lovableAuthGate?: unknown }).__lovableAuthGate = {
+    reportAuthError,
+    resetAuthGate,
+    getState: () => current,
+  };
+}
+  return useSyncExternalStore(
+    (cb) => {
+      listeners.add(cb);
+      return () => listeners.delete(cb);
+    },
+    () => current,
+    () => current,
+  );
+}
+
 /**
  * Subscribe a QueryClient so every query/mutation error is classified once
  * and reflected in the shared gate state. Idempotent per client.
