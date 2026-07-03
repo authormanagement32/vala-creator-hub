@@ -41,16 +41,17 @@ test.describe("Signed-out · every wall renders", () => {
 
       // Track auth-gated server-fn responses so we can prove APIs are actually blocked.
       const gatedResponses: { url: string; status: number; unauthorized: boolean; body: string }[] = [];
+      // Track ALL requests scoped to this wall so we can catch any 5xx anywhere.
+      const serverErrors: { url: string; status: number }[] = [];
       page.on("response", async (resp) => {
         const url = resp.url();
+        if (resp.status() >= 500) serverErrors.push({ url, status: resp.status() });
         if (!url.includes("/_serverFn/")) return;
         // whoAmI is deliberately public and returns { authed: false }.
         if (/whoAmI/i.test(url)) return;
         let body = "";
         try { body = await resp.text(); } catch {}
         const unauthorized = /Unauthorized|Forbidden|No authorization header/i.test(body);
-        // Only record calls that were actually gated (either non-2xx or carrying an
-        // Unauthorized payload). Public server fns that legitimately return [] are ignored.
         if (resp.status() === 401 || resp.status() === 403 || unauthorized) {
           gatedResponses.push({ url, status: resp.status(), unauthorized, body: body.slice(0, 200) });
         }
@@ -77,6 +78,19 @@ test.describe("Signed-out · every wall renders", () => {
       const hasSignIn = signInAffordances.some((n) => n > 0);
       expect(hasSignIn, `wall "${wall.label}" should surface a sign-in affordance`).toBeTruthy();
 
+      // Centralized banner must appear and remain stable (no flicker) after the
+      // initial blocked API responses land. Snapshot state at two points ~500ms
+      // apart and assert it did not disappear/re-appear.
+      const banner = page.locator('[data-testid="auth-gate-banner"]');
+      if (await banner.count()) {
+        await expect(banner.first()).toBeVisible();
+        const state1 = await banner.first().getAttribute("data-state");
+        await page.waitForTimeout(500);
+        await expect(banner.first(), "banner must remain visible (no flicker)").toBeVisible();
+        const state2 = await banner.first().getAttribute("data-state");
+        expect(state2, `banner state flickered on ${wall.to}`).toBe(state1);
+      }
+
       // Every gated call must be a controlled 401/403 (or a serialized Unauthorized
       // payload delivered over an RPC-200 envelope) — never a 5xx, never a silent success.
       for (const r of gatedResponses) {
@@ -87,6 +101,9 @@ test.describe("Signed-out · every wall renders", () => {
         ).toBeTruthy();
         expect(r.status, `wall "${wall.label}" gated call should not 5xx`).toBeLessThan(500);
       }
+
+      // No request across the whole wall (assets, SSR HTML, RPCs) may 5xx.
+      expect(serverErrors, `no 5xx requests allowed on ${wall.to}`).toEqual([]);
 
       // Blocked APIs must never surface as uncaught runtime errors.
       expect(pageErrors, `no uncaught page errors on ${wall.to}`).toEqual([]);
