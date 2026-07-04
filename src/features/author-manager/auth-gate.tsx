@@ -9,7 +9,7 @@ import type { QueryClient } from "@tanstack/react-query";
  * is funneled through here and mapped to a single visible UI state so walls
  * never render blank on auth failure.
  */
-export type AuthGateState = "ok" | "signin" | "forbidden";
+export type AuthGateState = "ok" | "signin" | "forbidden" | "rate_limited";
 
 let current: AuthGateState = "ok";
 const listeners = new Set<() => void>();
@@ -17,10 +17,18 @@ const listeners = new Set<() => void>();
 function emit() {
   for (const l of listeners) l();
 }
+// Precedence (highest wins): forbidden > signin > rate_limited > ok.
+// A transient 429 must never mask a real 401/403; and forbidden must never
+// be downgraded by a later 401 or 429 racing in from a background query.
+const RANK: Record<AuthGateState, number> = {
+  ok: 0,
+  rate_limited: 1,
+  signin: 2,
+  forbidden: 3,
+};
 function setState(next: AuthGateState) {
-  // Forbidden is stickier than signin (a real 403 shouldn't be masked by a
-  // later missing-header 401 racing in from another background query).
-  if (current === "forbidden" && next === "signin") return;
+  // Reset to 'ok' is always allowed (explicit dismissal).
+  if (next !== "ok" && RANK[next] < RANK[current]) return;
   if (current === next) return;
   current = next;
   emit();
@@ -37,6 +45,10 @@ export function classifyAuthError(err: unknown): AuthGateState {
   if (!msg) return "ok";
   if (/Forbidden/i.test(msg)) return "forbidden";
   if (/Unauthorized|No authorization header/i.test(msg)) return "signin";
+  if (
+    /\b429\b|Too Many Requests|Rate[- ]?limit(ed)?|Retry[- ]After/i.test(msg)
+  )
+    return "rate_limited";
   return "ok";
 }
 
@@ -111,6 +123,17 @@ export function AuthGateBanner() {
   const state = useAuthGate();
   if (state === "ok") return null;
   const signin = state === "signin";
+  const rate = state === "rate_limited";
+  const title = signin
+    ? "Sign in required"
+    : rate
+      ? "Too many requests"
+      : "Access denied";
+  const message = signin
+    ? "You need to sign in to load this data. Some panels will stay empty until you do."
+    : rate
+      ? "You're being rate limited. Some panels will retry automatically in a moment."
+      : "Your account doesn't have permission to view this data. Ask an administrator to grant the boss role.";
   return (
     <div
       role="alert"
@@ -121,18 +144,18 @@ export function AuthGateBanner() {
         "border-b px-4 py-3 text-sm " +
         (signin
           ? "border-hairline bg-surface-2 text-foreground"
-          : "border-danger/40 bg-danger/10 text-foreground")
+          : rate
+            ? "border-hairline bg-surface-2 text-foreground"
+            : "border-danger/40 bg-danger/10 text-foreground")
       }
     >
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="font-semibold" data-testid="auth-gate-title">
-            {signin ? "Sign in required" : "Access denied"}
+            {title}
           </p>
           <p className="text-muted-foreground" data-testid="auth-gate-message">
-            {signin
-              ? "You need to sign in to load this data. Some panels will stay empty until you do."
-              : "Your account doesn't have permission to view this data. Ask an administrator to grant the boss role."}
+            {message}
           </p>
         </div>
         {signin ? (
@@ -143,6 +166,15 @@ export function AuthGateBanner() {
           >
             Sign in
           </Link>
+        ) : rate ? (
+          <button
+            type="button"
+            data-testid="auth-gate-retry"
+            onClick={() => resetAuthGate()}
+            className="shrink-0 rounded-md border border-hairline px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-surface-2"
+          >
+            Dismiss
+          </button>
         ) : (
           <Link
             to="/boss/author-manager/dashboard"
