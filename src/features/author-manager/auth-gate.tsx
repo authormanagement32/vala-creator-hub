@@ -27,7 +27,8 @@ const RANK: Record<AuthGateState, number> = {
   forbidden: 3,
 };
 function setState(next: AuthGateState) {
-  if (RANK[next] < RANK[current]) return;
+  // Reset to 'ok' is always allowed (explicit dismissal).
+  if (next !== "ok" && RANK[next] < RANK[current]) return;
   if (current === next) return;
   current = next;
   emit();
