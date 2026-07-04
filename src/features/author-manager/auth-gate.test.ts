@@ -9,7 +9,7 @@ import {
 // public surface, not internals.
 function currentState() {
   return (window as unknown as {
-    __lovableAuthGate: { getState: () => "ok" | "signin" | "forbidden" };
+    __lovableAuthGate: { getState: () => "ok" | "signin" | "forbidden" | "rate_limited" };
   }).__lovableAuthGate.getState();
 }
 
