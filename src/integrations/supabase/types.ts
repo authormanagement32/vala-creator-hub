@@ -53,6 +53,45 @@ export type Database = {
         }
         Relationships: []
       }
+      auth_gate_events: {
+        Row: {
+          email: string | null
+          id: string
+          ip: string | null
+          message: string | null
+          occurred_at: string
+          state: string
+          status_code: number | null
+          user_agent: string | null
+          user_id: string | null
+          wall_route: string
+        }
+        Insert: {
+          email?: string | null
+          id?: string
+          ip?: string | null
+          message?: string | null
+          occurred_at?: string
+          state: string
+          status_code?: number | null
+          user_agent?: string | null
+          user_id?: string | null
+          wall_route: string
+        }
+        Update: {
+          email?: string | null
+          id?: string
+          ip?: string | null
+          message?: string | null
+          occurred_at?: string
+          state?: string
+          status_code?: number | null
+          user_agent?: string | null
+          user_id?: string | null
+          wall_route?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
