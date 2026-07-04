@@ -24,6 +24,8 @@ export const WALLS: WallNavItem[] = [
   { to: "/boss/author-manager/support", label: "Support", group: "ops" },
   { to: "/boss/author-manager/documents", label: "Documents", group: "ops" },
   { to: "/boss/author-manager/analytics", label: "Analytics", group: "insights" },
+  { to: "/boss/author-manager/auth-gate-events", label: "Auth Gate Events", group: "insights" },
   { to: "/boss/author-manager/reports", label: "Reports", group: "insights" },
   { to: "/boss/author-manager/settings", label: "Settings", group: "admin" },
+
 ];

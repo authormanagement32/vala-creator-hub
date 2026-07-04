@@ -55,9 +55,62 @@ export function classifyAuthError(err: unknown): AuthGateState {
 /** Report an error from anywhere (mutation onError, ad-hoc catch). */
 export function reportAuthError(err: unknown): AuthGateState {
   const next = classifyAuthError(err);
-  if (next !== "ok") setState(next);
+  if (next !== "ok") {
+    setState(next);
+    logAuthGateEvent(next, err);
+  }
   return next;
 }
+
+/** Extract an HTTP-ish status code from an unknown error shape. */
+function extractStatus(err: unknown): number | null {
+  if (!err) return null;
+  const anyErr = err as { status?: unknown; statusCode?: unknown; response?: { status?: unknown } };
+  const s = anyErr.status ?? anyErr.statusCode ?? anyErr.response?.status;
+  if (typeof s === "number" && s >= 100 && s <= 599) return s;
+  const msg = err instanceof Error ? err.message : typeof err === "string" ? err : "";
+  const m = msg.match(/\b(401|403|429)\b/);
+  return m ? Number(m[1]) : null;
+}
+
+// De-dupe rapid identical events (same route+state) inside a short window.
+const recent = new Map<string, number>();
+const DEDUPE_MS = 3000;
+
+function logAuthGateEvent(state: AuthGateState, err: unknown) {
+  if (typeof window === "undefined") return;
+  const wall_route = window.location?.pathname ?? "";
+  const key = `${wall_route}|${state}`;
+  const now = Date.now();
+  const last = recent.get(key) ?? 0;
+  if (now - last < DEDUPE_MS) return;
+  recent.set(key, now);
+  const status_code =
+    extractStatus(err) ??
+    (state === "signin" ? 401 : state === "forbidden" ? 403 : state === "rate_limited" ? 429 : null);
+  const message =
+    err instanceof Error ? err.message : typeof err === "string" ? err : null;
+  try {
+    const body = JSON.stringify({
+      wall_route,
+      state,
+      status_code,
+      message: message ? message.slice(0, 500) : null,
+    });
+    const blob = new Blob([body], { type: "application/json" });
+    // Prefer sendBeacon so the request survives navigations; fall back to fetch.
+    if (navigator.sendBeacon?.("/api/public/auth-gate-events", blob)) return;
+    void fetch("/api/public/auth-gate-events", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body,
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    // never let telemetry crash the UI
+  }
+}
+
 
 export function resetAuthGate() {
   setState("ok");

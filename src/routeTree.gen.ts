@@ -30,10 +30,12 @@ import { Route as BossAuthorManagerDownloadsRouteImport } from './routes/boss.au
 import { Route as BossAuthorManagerDocumentsRouteImport } from './routes/boss.author-manager.documents'
 import { Route as BossAuthorManagerDashboardRouteImport } from './routes/boss.author-manager.dashboard'
 import { Route as BossAuthorManagerAuthorsRouteImport } from './routes/boss.author-manager.authors'
+import { Route as BossAuthorManagerAuthGateEventsRouteImport } from './routes/boss.author-manager.auth-gate-events'
 import { Route as BossAuthorManagerApprovalsRouteImport } from './routes/boss.author-manager.approvals'
 import { Route as BossAuthorManagerApplicationsRouteImport } from './routes/boss.author-manager.applications'
 import { Route as BossAuthorManagerAnalyticsRouteImport } from './routes/boss.author-manager.analytics'
 import { Route as BossAuthorManagerAiModelsRouteImport } from './routes/boss.author-manager.ai-models'
+import { Route as ApiPublicAuthGateEventsRouteImport } from './routes/api/public/auth-gate-events'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -156,6 +158,12 @@ const BossAuthorManagerAuthorsRoute =
     path: '/authors',
     getParentRoute: () => BossAuthorManagerRoute,
   } as any)
+const BossAuthorManagerAuthGateEventsRoute =
+  BossAuthorManagerAuthGateEventsRouteImport.update({
+    id: '/auth-gate-events',
+    path: '/auth-gate-events',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
 const BossAuthorManagerApprovalsRoute =
   BossAuthorManagerApprovalsRouteImport.update({
     id: '/approvals',
@@ -180,15 +188,22 @@ const BossAuthorManagerAiModelsRoute =
     path: '/ai-models',
     getParentRoute: () => BossAuthorManagerRoute,
   } as any)
+const ApiPublicAuthGateEventsRoute = ApiPublicAuthGateEventsRouteImport.update({
+  id: '/api/public/auth-gate-events',
+  path: '/api/public/auth-gate-events',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/boss/author-manager': typeof BossAuthorManagerRouteWithChildren
+  '/api/public/auth-gate-events': typeof ApiPublicAuthGateEventsRoute
   '/boss/author-manager/ai-models': typeof BossAuthorManagerAiModelsRoute
   '/boss/author-manager/analytics': typeof BossAuthorManagerAnalyticsRoute
   '/boss/author-manager/applications': typeof BossAuthorManagerApplicationsRoute
   '/boss/author-manager/approvals': typeof BossAuthorManagerApprovalsRoute
+  '/boss/author-manager/auth-gate-events': typeof BossAuthorManagerAuthGateEventsRoute
   '/boss/author-manager/authors': typeof BossAuthorManagerAuthorsRoute
   '/boss/author-manager/dashboard': typeof BossAuthorManagerDashboardRoute
   '/boss/author-manager/documents': typeof BossAuthorManagerDocumentsRoute
@@ -211,10 +226,12 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/api/public/auth-gate-events': typeof ApiPublicAuthGateEventsRoute
   '/boss/author-manager/ai-models': typeof BossAuthorManagerAiModelsRoute
   '/boss/author-manager/analytics': typeof BossAuthorManagerAnalyticsRoute
   '/boss/author-manager/applications': typeof BossAuthorManagerApplicationsRoute
   '/boss/author-manager/approvals': typeof BossAuthorManagerApprovalsRoute
+  '/boss/author-manager/auth-gate-events': typeof BossAuthorManagerAuthGateEventsRoute
   '/boss/author-manager/authors': typeof BossAuthorManagerAuthorsRoute
   '/boss/author-manager/dashboard': typeof BossAuthorManagerDashboardRoute
   '/boss/author-manager/documents': typeof BossAuthorManagerDocumentsRoute
@@ -239,10 +256,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/boss/author-manager': typeof BossAuthorManagerRouteWithChildren
+  '/api/public/auth-gate-events': typeof ApiPublicAuthGateEventsRoute
   '/boss/author-manager/ai-models': typeof BossAuthorManagerAiModelsRoute
   '/boss/author-manager/analytics': typeof BossAuthorManagerAnalyticsRoute
   '/boss/author-manager/applications': typeof BossAuthorManagerApplicationsRoute
   '/boss/author-manager/approvals': typeof BossAuthorManagerApprovalsRoute
+  '/boss/author-manager/auth-gate-events': typeof BossAuthorManagerAuthGateEventsRoute
   '/boss/author-manager/authors': typeof BossAuthorManagerAuthorsRoute
   '/boss/author-manager/dashboard': typeof BossAuthorManagerDashboardRoute
   '/boss/author-manager/documents': typeof BossAuthorManagerDocumentsRoute
@@ -268,10 +287,12 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/boss/author-manager'
+    | '/api/public/auth-gate-events'
     | '/boss/author-manager/ai-models'
     | '/boss/author-manager/analytics'
     | '/boss/author-manager/applications'
     | '/boss/author-manager/approvals'
+    | '/boss/author-manager/auth-gate-events'
     | '/boss/author-manager/authors'
     | '/boss/author-manager/dashboard'
     | '/boss/author-manager/documents'
@@ -294,10 +315,12 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/api/public/auth-gate-events'
     | '/boss/author-manager/ai-models'
     | '/boss/author-manager/analytics'
     | '/boss/author-manager/applications'
     | '/boss/author-manager/approvals'
+    | '/boss/author-manager/auth-gate-events'
     | '/boss/author-manager/authors'
     | '/boss/author-manager/dashboard'
     | '/boss/author-manager/documents'
@@ -321,10 +344,12 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/boss/author-manager'
+    | '/api/public/auth-gate-events'
     | '/boss/author-manager/ai-models'
     | '/boss/author-manager/analytics'
     | '/boss/author-manager/applications'
     | '/boss/author-manager/approvals'
+    | '/boss/author-manager/auth-gate-events'
     | '/boss/author-manager/authors'
     | '/boss/author-manager/dashboard'
     | '/boss/author-manager/documents'
@@ -349,6 +374,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   BossAuthorManagerRoute: typeof BossAuthorManagerRouteWithChildren
+  ApiPublicAuthGateEventsRoute: typeof ApiPublicAuthGateEventsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -500,6 +526,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BossAuthorManagerAuthorsRouteImport
       parentRoute: typeof BossAuthorManagerRoute
     }
+    '/boss/author-manager/auth-gate-events': {
+      id: '/boss/author-manager/auth-gate-events'
+      path: '/auth-gate-events'
+      fullPath: '/boss/author-manager/auth-gate-events'
+      preLoaderRoute: typeof BossAuthorManagerAuthGateEventsRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
     '/boss/author-manager/approvals': {
       id: '/boss/author-manager/approvals'
       path: '/approvals'
@@ -528,6 +561,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BossAuthorManagerAiModelsRouteImport
       parentRoute: typeof BossAuthorManagerRoute
     }
+    '/api/public/auth-gate-events': {
+      id: '/api/public/auth-gate-events'
+      path: '/api/public/auth-gate-events'
+      fullPath: '/api/public/auth-gate-events'
+      preLoaderRoute: typeof ApiPublicAuthGateEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -536,6 +576,7 @@ interface BossAuthorManagerRouteChildren {
   BossAuthorManagerAnalyticsRoute: typeof BossAuthorManagerAnalyticsRoute
   BossAuthorManagerApplicationsRoute: typeof BossAuthorManagerApplicationsRoute
   BossAuthorManagerApprovalsRoute: typeof BossAuthorManagerApprovalsRoute
+  BossAuthorManagerAuthGateEventsRoute: typeof BossAuthorManagerAuthGateEventsRoute
   BossAuthorManagerAuthorsRoute: typeof BossAuthorManagerAuthorsRoute
   BossAuthorManagerDashboardRoute: typeof BossAuthorManagerDashboardRoute
   BossAuthorManagerDocumentsRoute: typeof BossAuthorManagerDocumentsRoute
@@ -561,6 +602,7 @@ const BossAuthorManagerRouteChildren: BossAuthorManagerRouteChildren = {
   BossAuthorManagerAnalyticsRoute: BossAuthorManagerAnalyticsRoute,
   BossAuthorManagerApplicationsRoute: BossAuthorManagerApplicationsRoute,
   BossAuthorManagerApprovalsRoute: BossAuthorManagerApprovalsRoute,
+  BossAuthorManagerAuthGateEventsRoute: BossAuthorManagerAuthGateEventsRoute,
   BossAuthorManagerAuthorsRoute: BossAuthorManagerAuthorsRoute,
   BossAuthorManagerDashboardRoute: BossAuthorManagerDashboardRoute,
   BossAuthorManagerDocumentsRoute: BossAuthorManagerDocumentsRoute,
@@ -588,6 +630,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   BossAuthorManagerRoute: BossAuthorManagerRouteWithChildren,
+  ApiPublicAuthGateEventsRoute: ApiPublicAuthGateEventsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
