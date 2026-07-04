@@ -107,9 +107,33 @@ describe("auth-gate · reportAuthError state transitions", () => {
     expect(currentState()).toBe("ok");
   });
 
+  it("a 429-shaped error moves to 'rate_limited'", () => {
+    reportAuthError(new Error("HTTP 429 Too Many Requests"));
+    expect(currentState()).toBe("rate_limited");
+  });
+
+  it("rate_limited is upgraded by signin and forbidden, not downgraded", () => {
+    reportAuthError(new Error("429 Too Many Requests"));
+    expect(currentState()).toBe("rate_limited");
+    reportAuthError(new Error("Unauthorized"));
+    expect(currentState()).toBe("signin");
+    reportAuthError(new Error("Forbidden"));
+    expect(currentState()).toBe("forbidden");
+    // Later 429 must not downgrade forbidden.
+    reportAuthError(new Error("429"));
+    expect(currentState()).toBe("forbidden");
+  });
+
+  it("signin is NOT downgraded by a later 429", () => {
+    reportAuthError(new Error("Unauthorized"));
+    reportAuthError(new Error("429 Too Many Requests"));
+    expect(currentState()).toBe("signin");
+  });
+
   it("reportAuthError returns the classified state", () => {
     expect(reportAuthError(new Error("Unauthorized"))).toBe("signin");
     expect(reportAuthError(new Error("Forbidden"))).toBe("forbidden");
+    expect(reportAuthError(new Error("429 Too Many Requests"))).toBe("rate_limited");
     expect(reportAuthError(new Error("nope"))).toBe("ok");
   });
 });
