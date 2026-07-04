@@ -419,3 +419,120 @@ export const whoAmI = createServerFn({ method: "GET" }).handler(async () => {
   const { data } = await sb.rpc("has_role", { _user_id: userRes.user.id, _role: "boss" });
   return { authed: true, userId: userRes.user.id, email: userRes.user.email ?? null, isBoss: !!data };
 });
+
+// ---- Auth Gate Events (admin reporting) ----
+const AuthGateFilter = z.object({
+  from: z.string().optional(),
+  to: z.string().optional(),
+  states: z.array(z.enum(["signin", "forbidden", "rate_limited"])).optional(),
+  wallRoute: z.string().optional(),
+  statusCodes: z.array(z.number().int().min(100).max(599)).optional(),
+});
+type AuthGateFilterT = z.infer<typeof AuthGateFilter>;
+
+function applyAuthGateFilters(q: any, f: AuthGateFilterT) {
+  if (f.from) q = q.gte("occurred_at", f.from);
+  if (f.to) q = q.lte("occurred_at", f.to);
+  if (f.states?.length) q = q.in("state", f.states);
+  if (f.wallRoute) q = q.eq("wall_route", f.wallRoute);
+  if (f.statusCodes?.length) q = q.in("status_code", f.statusCodes);
+  return q;
+}
+
+export const listAuthGateEvents = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => AuthGateFilter.extend({
+    limit: z.number().int().min(1).max(1000).optional(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureBoss(context);
+    assertDateRange(data.from, data.to);
+    let q = context.supabase.from("auth_gate_events").select("*", { count: "exact" })
+      .order("occurred_at", { ascending: false })
+      .limit(data.limit ?? 200);
+    q = applyAuthGateFilters(q, data);
+    const { data: rows, count, error } = await q;
+    if (error) throw new Error(error.message);
+    return { rows: rows ?? [], total: count ?? 0 };
+  });
+
+export const summarizeAuthGateEvents = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => AuthGateFilter.parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureBoss(context);
+    assertDateRange(data.from, data.to);
+    let q = context.supabase.from("auth_gate_events")
+      .select("occurred_at,wall_route,state,status_code")
+      .order("occurred_at", { ascending: false })
+      .limit(10000);
+    q = applyAuthGateFilters(q, data);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+
+    type Row = { occurred_at: string; wall_route: string; state: string; status_code: number | null };
+    const buckets = new Map<string, { day: string; wall_route: string; state: string; status_code: number | null; count: number }>();
+    const byDay = new Map<string, number>();
+    const byRoute = new Map<string, number>();
+    const byStatus = new Map<string, number>();
+    for (const r of (rows ?? []) as Row[]) {
+      const day = (r.occurred_at ?? "").slice(0, 10);
+      const status = r.status_code ?? null;
+      const key = `${day}|${r.wall_route}|${r.state}|${status ?? ""}`;
+      const b = buckets.get(key);
+      if (b) b.count += 1;
+      else buckets.set(key, { day, wall_route: r.wall_route, state: r.state, status_code: status, count: 1 });
+      byDay.set(day, (byDay.get(day) ?? 0) + 1);
+      byRoute.set(r.wall_route, (byRoute.get(r.wall_route) ?? 0) + 1);
+      const sKey = String(status ?? "unknown");
+      byStatus.set(sKey, (byStatus.get(sKey) ?? 0) + 1);
+    }
+    const rowsOut = Array.from(buckets.values()).sort((a, b) =>
+      a.day === b.day
+        ? a.wall_route.localeCompare(b.wall_route) || a.state.localeCompare(b.state)
+        : b.day.localeCompare(a.day),
+    );
+    return {
+      total: rows?.length ?? 0,
+      rows: rowsOut,
+      byDay: Array.from(byDay.entries()).map(([day, count]) => ({ day, count })).sort((a, b) => b.day.localeCompare(a.day)),
+      byRoute: Array.from(byRoute.entries()).map(([wall_route, count]) => ({ wall_route, count })).sort((a, b) => b.count - a.count),
+      byStatus: Array.from(byStatus.entries()).map(([status_code, count]) => ({ status_code, count })).sort((a, b) => b.count - a.count),
+    };
+  });
+
+export const exportAuthGateEventsCsv = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => AuthGateFilter.parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureBoss(context);
+    assertDateRange(data.from, data.to);
+    let q = context.supabase.from("auth_gate_events").select("*")
+      .order("occurred_at", { ascending: false }).limit(10000);
+    q = applyAuthGateFilters(q, data);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    const csv = toCsv(rows ?? [], [
+      "occurred_at", "wall_route", "state", "status_code",
+      "user_id", "email", "message", "user_agent", "ip",
+    ]);
+    await logAudit(context, {
+      entity: "auth-gate-export",
+      entityId: null,
+      action: "export-csv",
+      summary: `Exported ${rows?.length ?? 0} auth-gate event(s) to CSV`,
+      metadata: {
+        source: "auth_gate_events",
+        from: data.from ?? null,
+        to: data.to ?? null,
+        states: data.states ?? null,
+        wall_route: data.wallRoute ?? null,
+        status_codes: data.statusCodes ?? null,
+        count: rows?.length ?? 0,
+      },
+      severity: "info",
+      notify: false,
+    });
+    return { csv, count: rows?.length ?? 0 };
+  });
+
