@@ -9,7 +9,7 @@ import type { QueryClient } from "@tanstack/react-query";
  * is funneled through here and mapped to a single visible UI state so walls
  * never render blank on auth failure.
  */
-export type AuthGateState = "ok" | "signin" | "forbidden";
+export type AuthGateState = "ok" | "signin" | "forbidden" | "rate_limited";
 
 let current: AuthGateState = "ok";
 const listeners = new Set<() => void>();
@@ -17,10 +17,17 @@ const listeners = new Set<() => void>();
 function emit() {
   for (const l of listeners) l();
 }
+// Precedence (highest wins): forbidden > signin > rate_limited > ok.
+// A transient 429 must never mask a real 401/403; and forbidden must never
+// be downgraded by a later 401 or 429 racing in from a background query.
+const RANK: Record<AuthGateState, number> = {
+  ok: 0,
+  rate_limited: 1,
+  signin: 2,
+  forbidden: 3,
+};
 function setState(next: AuthGateState) {
-  // Forbidden is stickier than signin (a real 403 shouldn't be masked by a
-  // later missing-header 401 racing in from another background query).
-  if (current === "forbidden" && next === "signin") return;
+  if (RANK[next] < RANK[current]) return;
   if (current === next) return;
   current = next;
   emit();
@@ -37,6 +44,10 @@ export function classifyAuthError(err: unknown): AuthGateState {
   if (!msg) return "ok";
   if (/Forbidden/i.test(msg)) return "forbidden";
   if (/Unauthorized|No authorization header/i.test(msg)) return "signin";
+  if (
+    /\b429\b|Too Many Requests|Rate ?limit(ed)?|Retry[- ]After/i.test(msg)
+  )
+    return "rate_limited";
   return "ok";
 }
 
