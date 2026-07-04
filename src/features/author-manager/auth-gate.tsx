@@ -46,7 +46,7 @@ export function classifyAuthError(err: unknown): AuthGateState {
   if (/Forbidden/i.test(msg)) return "forbidden";
   if (/Unauthorized|No authorization header/i.test(msg)) return "signin";
   if (
-    /\b429\b|Too Many Requests|Rate ?limit(ed)?|Retry[- ]After/i.test(msg)
+    /\b429\b|Too Many Requests|Rate[- ]?limit(ed)?|Retry[- ]After/i.test(msg)
   )
     return "rate_limited";
   return "ok";
