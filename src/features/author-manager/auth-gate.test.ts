@@ -27,6 +27,17 @@ describe("auth-gate · classifyAuthError", () => {
     ["forbidden — role missing", "forbidden"],
     // --- forbidden wins over signin when both words appear ---
     ["Unauthorized and Forbidden combined", "forbidden"],
+    // --- rate_limited (429 shapes) ---
+    ["429", "rate_limited"],
+    ["HTTP 429 Too Many Requests", "rate_limited"],
+    ["Too Many Requests", "rate_limited"],
+    ["too many requests — try later", "rate_limited"],
+    ["Rate limit exceeded", "rate_limited"],
+    ["rate-limited by upstream", "rate_limited"],
+    ["Retry-After: 30", "rate_limited"],
+    // --- higher-precedence errors beat 429 when both appear ---
+    ["429 Unauthorized", "signin"],
+    ["429 Forbidden", "forbidden"],
     // --- unrelated errors stay 'ok' ---
     ["Network error", "ok"],
     ["ECONNREFUSED", "ok"],
