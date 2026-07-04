@@ -34,6 +34,7 @@ import { Route as BossAuthorManagerApprovalsRouteImport } from './routes/boss.au
 import { Route as BossAuthorManagerApplicationsRouteImport } from './routes/boss.author-manager.applications'
 import { Route as BossAuthorManagerAnalyticsRouteImport } from './routes/boss.author-manager.analytics'
 import { Route as BossAuthorManagerAiModelsRouteImport } from './routes/boss.author-manager.ai-models'
+import { Route as ApiPublicAuthGateEventsRouteImport } from './routes/api/public/auth-gate-events'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -180,11 +181,17 @@ const BossAuthorManagerAiModelsRoute =
     path: '/ai-models',
     getParentRoute: () => BossAuthorManagerRoute,
   } as any)
+const ApiPublicAuthGateEventsRoute = ApiPublicAuthGateEventsRouteImport.update({
+  id: '/api/public/auth-gate-events',
+  path: '/api/public/auth-gate-events',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/boss/author-manager': typeof BossAuthorManagerRouteWithChildren
+  '/api/public/auth-gate-events': typeof ApiPublicAuthGateEventsRoute
   '/boss/author-manager/ai-models': typeof BossAuthorManagerAiModelsRoute
   '/boss/author-manager/analytics': typeof BossAuthorManagerAnalyticsRoute
   '/boss/author-manager/applications': typeof BossAuthorManagerApplicationsRoute
@@ -211,6 +218,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/api/public/auth-gate-events': typeof ApiPublicAuthGateEventsRoute
   '/boss/author-manager/ai-models': typeof BossAuthorManagerAiModelsRoute
   '/boss/author-manager/analytics': typeof BossAuthorManagerAnalyticsRoute
   '/boss/author-manager/applications': typeof BossAuthorManagerApplicationsRoute
@@ -239,6 +247,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/boss/author-manager': typeof BossAuthorManagerRouteWithChildren
+  '/api/public/auth-gate-events': typeof ApiPublicAuthGateEventsRoute
   '/boss/author-manager/ai-models': typeof BossAuthorManagerAiModelsRoute
   '/boss/author-manager/analytics': typeof BossAuthorManagerAnalyticsRoute
   '/boss/author-manager/applications': typeof BossAuthorManagerApplicationsRoute
@@ -268,6 +277,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/boss/author-manager'
+    | '/api/public/auth-gate-events'
     | '/boss/author-manager/ai-models'
     | '/boss/author-manager/analytics'
     | '/boss/author-manager/applications'
@@ -294,6 +304,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/api/public/auth-gate-events'
     | '/boss/author-manager/ai-models'
     | '/boss/author-manager/analytics'
     | '/boss/author-manager/applications'
@@ -321,6 +332,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/boss/author-manager'
+    | '/api/public/auth-gate-events'
     | '/boss/author-manager/ai-models'
     | '/boss/author-manager/analytics'
     | '/boss/author-manager/applications'
@@ -349,6 +361,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   BossAuthorManagerRoute: typeof BossAuthorManagerRouteWithChildren
+  ApiPublicAuthGateEventsRoute: typeof ApiPublicAuthGateEventsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -528,6 +541,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BossAuthorManagerAiModelsRouteImport
       parentRoute: typeof BossAuthorManagerRoute
     }
+    '/api/public/auth-gate-events': {
+      id: '/api/public/auth-gate-events'
+      path: '/api/public/auth-gate-events'
+      fullPath: '/api/public/auth-gate-events'
+      preLoaderRoute: typeof ApiPublicAuthGateEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -588,6 +608,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   BossAuthorManagerRoute: BossAuthorManagerRouteWithChildren,
+  ApiPublicAuthGateEventsRoute: ApiPublicAuthGateEventsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
