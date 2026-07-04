@@ -122,6 +122,17 @@ export function AuthGateBanner() {
   const state = useAuthGate();
   if (state === "ok") return null;
   const signin = state === "signin";
+  const rate = state === "rate_limited";
+  const title = signin
+    ? "Sign in required"
+    : rate
+      ? "Too many requests"
+      : "Access denied";
+  const message = signin
+    ? "You need to sign in to load this data. Some panels will stay empty until you do."
+    : rate
+      ? "You're being rate limited. Some panels will retry automatically in a moment."
+      : "Your account doesn't have permission to view this data. Ask an administrator to grant the boss role.";
   return (
     <div
       role="alert"
@@ -132,18 +143,18 @@ export function AuthGateBanner() {
         "border-b px-4 py-3 text-sm " +
         (signin
           ? "border-hairline bg-surface-2 text-foreground"
-          : "border-danger/40 bg-danger/10 text-foreground")
+          : rate
+            ? "border-hairline bg-surface-2 text-foreground"
+            : "border-danger/40 bg-danger/10 text-foreground")
       }
     >
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="font-semibold" data-testid="auth-gate-title">
-            {signin ? "Sign in required" : "Access denied"}
+            {title}
           </p>
           <p className="text-muted-foreground" data-testid="auth-gate-message">
-            {signin
-              ? "You need to sign in to load this data. Some panels will stay empty until you do."
-              : "Your account doesn't have permission to view this data. Ask an administrator to grant the boss role."}
+            {message}
           </p>
         </div>
         {signin ? (
@@ -154,6 +165,15 @@ export function AuthGateBanner() {
           >
             Sign in
           </Link>
+        ) : rate ? (
+          <button
+            type="button"
+            data-testid="auth-gate-retry"
+            onClick={() => resetAuthGate()}
+            className="shrink-0 rounded-md border border-hairline px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-surface-2"
+          >
+            Dismiss
+          </button>
         ) : (
           <Link
             to="/boss/author-manager/dashboard"
