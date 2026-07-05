@@ -1,28 +1,54 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { z } from "zod";
 import { WallShell } from "@/features/author-manager/components/WallShell";
 import { FilterBar } from "@/features/author-manager/components/FilterBar";
 import { DataTable, type Column } from "@/features/author-manager/components/DataTable";
 import { StatusBadge } from "@/features/author-manager/components/StatusBadge";
 import { RightActionPanel } from "@/features/author-manager/components/RightActionPanel";
 import { AuditTimeline } from "@/features/author-manager/components/AuditTimeline";
-import { useAuthors, deriveState } from "@/features/author-manager/data";
+import { deriveState } from "@/features/author-manager/data";
 import { fmtMoney, fmtNumber } from "@/features/author-manager/format";
-import type { Author } from "@/features/author-manager/types";
+import { useHasSession } from "@/hooks/use-has-session";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  listAuthors, createAuthor, updateAuthor, setAuthorVerification, deleteAuthor,
+} from "@/lib/author-manager.functions";
 
 export const Route = createFileRoute("/boss/author-manager/authors")({
   head: () => ({ meta: [{ title: "Authors — Author Manager" }] }),
   component: AuthorsWall,
 });
 
-const columns: Column<Author>[] = [
+type AuthorRow = {
+  id: string; name: string; email: string; company: string | null; country: string | null;
+  status: "verified" | "pending" | "suspended" | "rejected"; verified: boolean;
+  products_count: number; rating: number | null; revenue: number; royalties: number;
+  health_score: number; risk_score: number; joined_at: string;
+};
+
+const AuthorFormSchema = z.object({
+  name: z.string().trim().min(1, "Name required").max(200),
+  email: z.string().trim().email("Valid email required").max(255),
+  company: z.string().trim().max(200).optional(),
+  country: z.string().trim().max(80).optional(),
+  status: z.enum(["verified", "pending", "suspended", "rejected"]),
+});
+
+const columns: Column<AuthorRow>[] = [
   {
-    id: "name",
-    header: "Author",
+    id: "name", header: "Author", width: "1.5",
     cell: (r) => (
       <div className="flex items-center gap-2">
         <div className="grid h-6 w-6 place-items-center rounded-full bg-brand/15 text-[10px] font-semibold text-brand">
-          {r.name.slice(0, 1)}
+          {r.name.slice(0, 1).toUpperCase()}
         </div>
         <div>
           <div className="font-medium">{r.name}</div>
@@ -30,29 +56,58 @@ const columns: Column<Author>[] = [
         </div>
       </div>
     ),
-    width: "1.5",
   },
   { id: "company", header: "Company", cell: (r) => r.company ?? "—" },
   { id: "country", header: "Country", cell: (r) => r.country ?? "—", width: "0.6" },
   { id: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} />, width: "0.6" },
-  { id: "products", header: "Products", cell: (r) => fmtNumber(r.products), width: "0.5", align: "right" },
-  { id: "revenue", header: "Revenue", cell: (r) => fmtMoney(r.revenue), width: "0.7", align: "right" },
-  { id: "royalties", header: "Royalties", cell: (r) => fmtMoney(r.royalties), width: "0.7", align: "right" },
-  { id: "health", header: "Health", cell: (r) => fmtNumber(r.healthScore), width: "0.4", align: "right" },
-  { id: "risk", header: "Risk", cell: (r) => fmtNumber(r.riskScore), width: "0.4", align: "right" },
+  { id: "products", header: "Products", cell: (r) => fmtNumber(r.products_count), width: "0.5", align: "right" },
+  { id: "revenue", header: "Revenue", cell: (r) => fmtMoney(Number(r.revenue)), width: "0.7", align: "right" },
+  { id: "royalties", header: "Royalties", cell: (r) => fmtMoney(Number(r.royalties)), width: "0.7", align: "right" },
+  { id: "health", header: "Health", cell: (r) => fmtNumber(r.health_score), width: "0.4", align: "right" },
+  { id: "risk", header: "Risk", cell: (r) => fmtNumber(r.risk_score), width: "0.4", align: "right" },
 ];
 
 function AuthorsWall() {
+  const hasSession = useHasSession();
+  const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
-  const [selected, setSelected] = useState<Author | null>(null);
-  const { data, isLoading, isError } = useAuthors({
-    page: 1,
-    pageSize: 100,
-    search,
-    filters: { status },
+  const [selected, setSelected] = useState<AuthorRow | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+
+  const listFn = useServerFn(listAuthors);
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["authors", { search, status }],
+    queryFn: () => listFn({ data: { search, status, page: 1, pageSize: 100 } }),
+    enabled: hasSession === true,
   });
-  const state = deriveState(isLoading, isError, data);
+  const state = deriveState(isLoading, isError, data as any);
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["authors"] });
+  const invalidateAudit = () => qc.invalidateQueries({ queryKey: ["audit", "author"] });
+
+  const create = useMutation({
+    mutationFn: useServerFn(createAuthor),
+    onSuccess: () => { toast.success("Author created"); invalidate(); setShowCreate(false); },
+    onError: (e: any) => toast.error(e?.message ?? "Failed to create author"),
+  });
+  const update = useMutation({
+    mutationFn: useServerFn(updateAuthor),
+    onSuccess: (row: any) => { toast.success("Author updated"); invalidate(); invalidateAudit(); setSelected(row); setShowEdit(false); },
+    onError: (e: any) => toast.error(e?.message ?? "Update failed"),
+  });
+  const verify = useMutation({
+    mutationFn: useServerFn(setAuthorVerification),
+    onSuccess: (row: any) => { toast.success(`Status → ${row.status}`); invalidate(); invalidateAudit(); setSelected(row); },
+    onError: (e: any) => toast.error(e?.message ?? "Status change failed"),
+  });
+  const remove = useMutation({
+    mutationFn: useServerFn(deleteAuthor),
+    onSuccess: () => { toast.success("Author deleted"); invalidate(); setSelected(null); },
+    onError: (e: any) => toast.error(e?.message ?? "Delete failed"),
+  });
+
   return (
     <WallShell
       title="Authors"
@@ -70,42 +125,109 @@ function AuthorsWall() {
         ]}
         status={status}
         onStatusChange={setStatus}
-        onCreate={() => {}}
+        onCreate={() => setShowCreate(true)}
         createLabel="Add author"
       />
       <DataTable
         columns={columns}
-        rows={data?.rows ?? []}
+        rows={(data?.rows ?? []) as AuthorRow[]}
         state={state}
         rowKey={(r) => r.id}
         onRowClick={setSelected}
         emptyTitle="No authors yet"
-        emptyDescription="Once authors are approved through the pipeline, their profiles populate this directory."
+        emptyDescription="Add an author manually or approve an application to populate this directory."
       />
+
       <RightActionPanel
         open={!!selected}
         onClose={() => setSelected(null)}
         title={selected?.name ?? ""}
         subtitle={selected?.email}
       >
-        <div className="space-y-4 text-sm">
-          <div className="grid grid-cols-2 gap-2">
-            <Stat label="Products" value={fmtNumber(selected?.products)} />
-            <Stat label="Revenue" value={fmtMoney(selected?.revenue)} />
-            <Stat label="Royalties" value={fmtMoney(selected?.royalties)} />
-            <Stat label="Health" value={fmtNumber(selected?.healthScore)} />
+        {selected && (
+          <div className="space-y-4 text-sm">
+            <div className="grid grid-cols-2 gap-2">
+              <Stat label="Status" value={<StatusBadge status={selected.status} />} />
+              <Stat label="Verified" value={selected.verified ? "Yes" : "No"} />
+              <Stat label="Products" value={fmtNumber(selected.products_count)} />
+              <Stat label="Rating" value={selected.rating ?? "—"} />
+              <Stat label="Revenue" value={fmtMoney(Number(selected.revenue))} />
+              <Stat label="Royalties" value={fmtMoney(Number(selected.royalties))} />
+              <Stat label="Health" value={fmtNumber(selected.health_score)} />
+              <Stat label="Risk" value={fmtNumber(selected.risk_score)} />
+            </div>
+
+            <div>
+              <div className="mb-1 text-[10px] uppercase tracking-wide text-muted-foreground">Verification</div>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="secondary" disabled={verify.isPending || selected.status === "verified"}
+                  onClick={() => verify.mutate({ data: { id: selected.id, status: "verified" } })}>Verify</Button>
+                <Button size="sm" variant="outline" disabled={verify.isPending || selected.status === "pending"}
+                  onClick={() => verify.mutate({ data: { id: selected.id, status: "pending" } })}>Mark pending</Button>
+                <Button size="sm" variant="outline" disabled={verify.isPending || selected.status === "suspended"}
+                  onClick={() => {
+                    const reason = window.prompt("Suspension reason?") ?? undefined;
+                    if (reason === undefined) return;
+                    verify.mutate({ data: { id: selected.id, status: "suspended", reason } });
+                  }}>Suspend</Button>
+                <Button size="sm" variant="destructive" disabled={verify.isPending}
+                  onClick={() => {
+                    const reason = window.prompt("Rejection reason?") ?? undefined;
+                    if (reason === undefined) return;
+                    verify.mutate({ data: { id: selected.id, status: "rejected", reason } });
+                  }}>Reject</Button>
+              </div>
+            </div>
+
+            <div>
+              <div className="mb-1 text-[10px] uppercase tracking-wide text-muted-foreground">Health & Risk</div>
+              <HealthRiskEditor
+                author={selected}
+                pending={update.isPending}
+                onSave={(patch) => update.mutate({ data: { id: selected.id, patch } })}
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={() => setShowEdit(true)}>Edit profile</Button>
+              <Button size="sm" variant="destructive"
+                onClick={() => {
+                  if (window.confirm(`Delete "${selected.name}"? This cannot be undone.`)) {
+                    remove.mutate({ data: { id: selected.id } });
+                  }
+                }}>Delete</Button>
+            </div>
+
+            <div>
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Audit</div>
+              <AuditTimeline entity="author" entityId={selected.id} />
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button className="rounded-md border border-hairline px-3 py-1.5 text-xs">View profile</button>
-            <button className="rounded-md border border-hairline px-3 py-1.5 text-xs">Message</button>
-            <button className="rounded-md border border-warning/40 px-3 py-1.5 text-xs text-warning">Suspend</button>
-          </div>
-          <div>
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Audit</div>
-            <AuditTimeline entity="author" entityId={selected?.id} />
-          </div>
-        </div>
+        )}
       </RightActionPanel>
+
+      <AuthorFormDialog
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        title="Add author"
+        submitLabel="Create"
+        pending={create.isPending}
+        onSubmit={(v) => create.mutate({ data: v })}
+      />
+      <AuthorFormDialog
+        key={selected?.id ?? "edit"}
+        open={showEdit && !!selected}
+        onClose={() => setShowEdit(false)}
+        title="Edit author"
+        submitLabel="Save"
+        pending={update.isPending}
+        initial={selected ? {
+          name: selected.name, email: selected.email,
+          company: selected.company ?? "", country: selected.country ?? "",
+          status: selected.status,
+        } : undefined}
+        onSubmit={(v) => selected && update.mutate({ data: { id: selected.id, patch: v } })}
+      />
     </WallShell>
   );
 }
@@ -115,6 +237,114 @@ function Stat({ label, value }: { label: string; value: React.ReactNode }) {
     <div className="rounded-md border border-hairline p-2">
       <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className="mt-0.5 text-sm font-semibold tabular-nums">{value}</div>
+    </div>
+  );
+}
+
+function HealthRiskEditor({
+  author, pending, onSave,
+}: {
+  author: AuthorRow; pending: boolean;
+  onSave: (patch: { health_score: number; risk_score: number }) => void;
+}) {
+  const [health, setHealth] = useState(author.health_score);
+  const [risk, setRisk] = useState(author.risk_score);
+  const dirty = health !== author.health_score || risk !== author.risk_score;
+  const valid = health >= 0 && health <= 100 && risk >= 0 && risk <= 100;
+  return (
+    <div className="grid grid-cols-[1fr_1fr_auto] items-end gap-2">
+      <div>
+        <Label className="text-[10px]">Health 0–100</Label>
+        <Input type="number" min={0} max={100} value={health}
+          onChange={(e) => setHealth(Number(e.target.value))} />
+      </div>
+      <div>
+        <Label className="text-[10px]">Risk 0–100</Label>
+        <Input type="number" min={0} max={100} value={risk}
+          onChange={(e) => setRisk(Number(e.target.value))} />
+      </div>
+      <Button size="sm" disabled={!dirty || !valid || pending}
+        onClick={() => onSave({ health_score: health, risk_score: risk })}>
+        Save
+      </Button>
+    </div>
+  );
+}
+
+function AuthorFormDialog({
+  open, onClose, title, submitLabel, pending, initial, onSubmit,
+}: {
+  open: boolean; onClose: () => void; title: string; submitLabel: string; pending: boolean;
+  initial?: { name: string; email: string; company: string; country: string; status: AuthorRow["status"] };
+  onSubmit: (v: z.infer<typeof AuthorFormSchema>) => void;
+}) {
+  const [name, setName] = useState(initial?.name ?? "");
+  const [email, setEmail] = useState(initial?.email ?? "");
+  const [company, setCompany] = useState(initial?.company ?? "");
+  const [country, setCountry] = useState(initial?.country ?? "");
+  const [status, setStatus] = useState<AuthorRow["status"]>(initial?.status ?? "pending");
+  const [errs, setErrs] = useState<Record<string, string>>({});
+
+  function submit() {
+    const parsed = AuthorFormSchema.safeParse({
+      name, email,
+      company: company || undefined,
+      country: country || undefined,
+      status,
+    });
+    if (!parsed.success) {
+      const map: Record<string, string> = {};
+      for (const i of parsed.error.issues) map[i.path[0] as string] = i.message;
+      setErrs(map); return;
+    }
+    setErrs({});
+    onSubmit(parsed.data);
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
+        <div className="grid gap-3">
+          <Field label="Name" error={errs.name}>
+            <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={200} />
+          </Field>
+          <Field label="Email" error={errs.email}>
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={255} />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Company" error={errs.company}>
+              <Input value={company} onChange={(e) => setCompany(e.target.value)} maxLength={200} />
+            </Field>
+            <Field label="Country" error={errs.country}>
+              <Input value={country} onChange={(e) => setCountry(e.target.value)} maxLength={80} />
+            </Field>
+          </div>
+          <Field label="Status" error={errs.status}>
+            <select className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              value={status} onChange={(e) => setStatus(e.target.value as AuthorRow["status"])}>
+              <option value="pending">Pending</option>
+              <option value="verified">Verified</option>
+              <option value="suspended">Suspended</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </Field>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={pending}>Cancel</Button>
+          <Button onClick={submit} disabled={pending}>{submitLabel}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <Label className="text-xs">{label}</Label>
+      <div className="mt-1">{children}</div>
+      {error && <div className="mt-1 text-[11px] text-danger">{error}</div>}
     </div>
   );
 }
