@@ -562,7 +562,7 @@ export const listAuthors = createServerFn({ method: "GET" })
       .order("updated_at", { ascending: false })
       .range((page - 1) * pageSize, page * pageSize - 1);
     if (data.search) q = q.or(`name.ilike.%${data.search}%,email.ilike.%${data.search}%,company.ilike.%${data.search}%`);
-    if (data.status) q = q.eq("status", data.status);
+    if (data.status) q = q.eq("status", data.status as any);
     const { data: rows, count, error } = await q;
     if (error) throw new Error(error.message);
     return { rows: rows ?? [], total: count ?? 0 };
@@ -595,7 +595,7 @@ export const updateAuthor = createServerFn({ method: "POST" })
     await ensureBoss(context);
     const patch: Record<string, unknown> = { ...data.patch };
     if (patch.status && patch.verified === undefined) patch.verified = patch.status === "verified";
-    const { data: row, error } = await context.supabase.from("authors").update(patch).eq("id", data.id).select().single();
+    const { data: row, error } = await context.supabase.from("authors").update(patch as any).eq("id", data.id).select().single();
     if (error) throw new Error(error.message);
     await logAudit(context, { entity: "author", entityId: row.id, action: "update", summary: `Updated author "${row.name}"`, metadata: data.patch });
     return row;
