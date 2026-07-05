@@ -13,6 +13,7 @@ import { EmptyState } from "@/features/author-manager/components/EmptyState";
 import { ScanResultsPanel, type ScanFinding } from "@/features/author-manager/components/ScanResultsPanel";
 import { fmtNumber } from "@/features/author-manager/format";
 import { listRepos, createRepo, runSecurityScan, releaseRepo } from "@/lib/author-manager.functions";
+import { useHasSession } from "@/hooks/use-has-session";
 
 export const Route = createFileRoute("/boss/author-manager/source-code")({
   head: () => ({ meta: [{ title: "Source Code — Author Manager" }] }),
