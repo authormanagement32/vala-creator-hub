@@ -536,3 +536,265 @@ export const exportAuthGateEventsCsv = createServerFn({ method: "POST" })
     return { csv, count: rows?.length ?? 0 };
   });
 
+
+// ---- Authors ----
+const AuthorPatch = z.object({
+  name: z.string().trim().min(1).max(200).optional(),
+  email: z.string().trim().email().max(255).optional(),
+  company: z.string().trim().max(200).nullable().optional(),
+  country: z.string().trim().max(80).nullable().optional(),
+  status: z.enum(["verified","pending","suspended","rejected"]).optional(),
+  verified: z.boolean().optional(),
+  rating: z.number().min(0).max(5).nullable().optional(),
+  revenue: z.number().min(0).optional(),
+  royalties: z.number().min(0).optional(),
+  health_score: z.number().int().min(0).max(100).optional(),
+  risk_score: z.number().int().min(0).max(100).optional(),
+});
+
+export const listAuthors = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { search?: string; status?: string; page?: number; pageSize?: number }) => d)
+  .handler(async ({ data, context }) => {
+    await ensureBoss(context);
+    const page = data.page ?? 1, pageSize = Math.min(data.pageSize ?? 100, 500);
+    let q = context.supabase.from("authors").select("*", { count: "exact" })
+      .order("updated_at", { ascending: false })
+      .range((page - 1) * pageSize, page * pageSize - 1);
+    if (data.search) q = q.or(`name.ilike.%${data.search}%,email.ilike.%${data.search}%,company.ilike.%${data.search}%`);
+    if (data.status) q = q.eq("status", data.status);
+    const { data: rows, count, error } = await q;
+    if (error) throw new Error(error.message);
+    return { rows: rows ?? [], total: count ?? 0 };
+  });
+
+export const createAuthor = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    name: z.string().trim().min(1).max(200),
+    email: z.string().trim().email().max(255),
+    company: z.string().trim().max(200).optional().nullable(),
+    country: z.string().trim().max(80).optional().nullable(),
+    status: z.enum(["verified","pending","suspended","rejected"]).default("pending"),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureBoss(context);
+    const { data: row, error } = await context.supabase.from("authors").insert({
+      ...data,
+      verified: data.status === "verified",
+    }).select().single();
+    if (error) throw new Error(error.message);
+    await logAudit(context, { entity: "author", entityId: row.id, action: "create", summary: `Created author "${row.name}"`, severity: "success" });
+    return row;
+  });
+
+export const updateAuthor = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid(), patch: AuthorPatch }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureBoss(context);
+    const patch: Record<string, unknown> = { ...data.patch };
+    if (patch.status && patch.verified === undefined) patch.verified = patch.status === "verified";
+    const { data: row, error } = await context.supabase.from("authors").update(patch).eq("id", data.id).select().single();
+    if (error) throw new Error(error.message);
+    await logAudit(context, { entity: "author", entityId: row.id, action: "update", summary: `Updated author "${row.name}"`, metadata: data.patch });
+    return row;
+  });
+
+export const setAuthorVerification = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    id: z.string().uuid(),
+    status: z.enum(["verified","pending","suspended","rejected"]),
+    reason: z.string().trim().max(500).optional(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureBoss(context);
+    const { data: row, error } = await context.supabase.from("authors")
+      .update({ status: data.status, verified: data.status === "verified" })
+      .eq("id", data.id).select().single();
+    if (error) throw new Error(error.message);
+    const sev = data.status === "suspended" || data.status === "rejected" ? "danger"
+      : data.status === "verified" ? "success" : "warn";
+    await logAudit(context, {
+      entity: "author", entityId: row.id, action: `verify:${data.status}`,
+      summary: `Author "${row.name}" set to ${data.status}${data.reason ? ` — ${data.reason}` : ""}`,
+      metadata: { reason: data.reason ?? null }, severity: sev,
+    });
+    return row;
+  });
+
+export const deleteAuthor = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureBoss(context);
+    const { data: row } = await context.supabase.from("authors").select("name").eq("id", data.id).single();
+    const { error } = await context.supabase.from("authors").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    await logAudit(context, { entity: "author", entityId: data.id, action: "delete", summary: `Deleted author "${row?.name ?? data.id}"`, severity: "danger" });
+    return { ok: true };
+  });
+
+// ---- Applications ----
+export const listApplications = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { search?: string; stage?: string; page?: number; pageSize?: number }) => d)
+  .handler(async ({ data, context }) => {
+    await ensureBoss(context);
+    const page = data.page ?? 1, pageSize = Math.min(data.pageSize ?? 100, 500);
+    let q = context.supabase.from("applications").select("*", { count: "exact" })
+      .order("updated_at", { ascending: false })
+      .range((page - 1) * pageSize, page * pageSize - 1);
+    if (data.search) q = q.or(`applicant_name.ilike.%${data.search}%,email.ilike.%${data.search}%`);
+    if (data.stage) q = q.eq("stage", data.stage);
+    const { data: rows, count, error } = await q;
+    if (error) throw new Error(error.message);
+    return { rows: rows ?? [], total: count ?? 0 };
+  });
+
+export const createApplication = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    applicant_name: z.string().trim().min(1).max(200),
+    email: z.string().trim().email().max(255),
+    country: z.string().trim().max(80).optional().nullable(),
+    stage: z.enum(["registration","identity","kyc","portfolio","interview","agreement","approved","rejected"]).default("registration"),
+    reviewer_email: z.string().trim().email().max(255).optional().nullable(),
+    notes: z.string().trim().max(2000).optional().nullable(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureBoss(context);
+    const { data: row, error } = await context.supabase.from("applications").insert(data).select().single();
+    if (error) throw new Error(error.message);
+    await logAudit(context, {
+      entity: "application", entityId: row.id, action: "invite",
+      summary: `Invited "${row.applicant_name}" (${row.email})`, severity: "info",
+    });
+    return row;
+  });
+
+export const advanceApplicationStage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    id: z.string().uuid(),
+    stage: z.enum(["registration","identity","kyc","portfolio","interview","agreement"]),
+    notes: z.string().trim().max(2000).optional(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureBoss(context);
+    const patch: Record<string, unknown> = { stage: data.stage };
+    if (data.notes) patch.notes = data.notes;
+    const { data: row, error } = await context.supabase.from("applications").update(patch).eq("id", data.id).select().single();
+    if (error) throw new Error(error.message);
+    await logAudit(context, {
+      entity: "application", entityId: row.id, action: `stage:${data.stage}`,
+      summary: `Advanced "${row.applicant_name}" to ${data.stage}`,
+      metadata: { notes: data.notes ?? null }, severity: "info",
+    });
+    return row;
+  });
+
+export const approveApplication = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    id: z.string().uuid(),
+    notes: z.string().trim().max(2000).optional(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureBoss(context);
+    const { data: app, error: aerr } = await context.supabase.from("applications").select("*").eq("id", data.id).single();
+    if (aerr) throw new Error(aerr.message);
+    if (app.stage === "approved") throw new Error("Application already approved.");
+    if (app.stage === "rejected") throw new Error("Cannot approve a rejected application. Move it back to a prior stage first.");
+
+    // Create or link author.
+    let authorId = app.author_id as string | null;
+    if (!authorId) {
+      const { data: existing } = await context.supabase.from("authors").select("id").eq("email", app.email).maybeSingle();
+      if (existing) {
+        authorId = existing.id;
+        await context.supabase.from("authors").update({ status: "verified", verified: true }).eq("id", authorId);
+      } else {
+        const { data: newAuthor, error: cerr } = await context.supabase.from("authors").insert({
+          name: app.applicant_name, email: app.email, country: app.country,
+          status: "verified", verified: true, joined_at: new Date().toISOString(),
+        }).select("id").single();
+        if (cerr) throw new Error(cerr.message);
+        authorId = newAuthor.id;
+      }
+    }
+
+    const { data: row, error } = await context.supabase.from("applications").update({
+      stage: "approved", decided_at: new Date().toISOString(), author_id: authorId,
+      notes: data.notes ?? app.notes,
+    }).eq("id", data.id).select().single();
+    if (error) throw new Error(error.message);
+
+    await logAudit(context, {
+      entity: "application", entityId: row.id, action: "approve",
+      summary: `Approved "${row.applicant_name}" — author profile issued`,
+      metadata: { author_id: authorId, notes: data.notes ?? null }, severity: "success",
+    });
+    await logAudit(context, {
+      entity: "author", entityId: authorId!, action: "verify:verified",
+      summary: `Author "${row.applicant_name}" verified via application approval`,
+      severity: "success",
+    });
+    return row;
+  });
+
+export const rejectApplication = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    id: z.string().uuid(),
+    reason: z.string().trim().min(1, "Reason is required").max(2000),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureBoss(context);
+    const { data: row, error } = await context.supabase.from("applications").update({
+      stage: "rejected", decided_at: new Date().toISOString(), notes: data.reason,
+    }).eq("id", data.id).select().single();
+    if (error) throw new Error(error.message);
+    await logAudit(context, {
+      entity: "application", entityId: row.id, action: "reject",
+      summary: `Rejected "${row.applicant_name}" — ${data.reason}`,
+      metadata: { reason: data.reason }, severity: "danger",
+    });
+    return row;
+  });
+
+export const requestApplicationChanges = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    id: z.string().uuid(),
+    message: z.string().trim().min(1).max(2000),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureBoss(context);
+    const { data: row, error } = await context.supabase.from("applications").update({
+      notes: data.message,
+    }).eq("id", data.id).select().single();
+    if (error) throw new Error(error.message);
+    await logAudit(context, {
+      entity: "application", entityId: row.id, action: "request-changes",
+      summary: `Requested changes from "${row.applicant_name}"`,
+      metadata: { message: data.message }, severity: "warn",
+    });
+    return row;
+  });
+
+export const deleteApplication = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureBoss(context);
+    const { data: row } = await context.supabase.from("applications").select("applicant_name").eq("id", data.id).single();
+    const { error } = await context.supabase.from("applications").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    await logAudit(context, {
+      entity: "application", entityId: data.id, action: "delete",
+      summary: `Deleted application "${row?.applicant_name ?? data.id}"`, severity: "danger",
+    });
+    return { ok: true };
+  });
