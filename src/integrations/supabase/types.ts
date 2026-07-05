@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      applications: {
+        Row: {
+          applicant_name: string
+          author_id: string | null
+          country: string | null
+          created_at: string
+          decided_at: string | null
+          email: string
+          id: string
+          notes: string | null
+          reviewer_email: string | null
+          stage: Database["public"]["Enums"]["application_stage"]
+          submitted_at: string
+          updated_at: string
+        }
+        Insert: {
+          applicant_name: string
+          author_id?: string | null
+          country?: string | null
+          created_at?: string
+          decided_at?: string | null
+          email: string
+          id?: string
+          notes?: string | null
+          reviewer_email?: string | null
+          stage?: Database["public"]["Enums"]["application_stage"]
+          submitted_at?: string
+          updated_at?: string
+        }
+        Update: {
+          applicant_name?: string
+          author_id?: string | null
+          country?: string | null
+          created_at?: string
+          decided_at?: string | null
+          email?: string
+          id?: string
+          notes?: string | null
+          reviewer_email?: string | null
+          stage?: Database["public"]["Enums"]["application_stage"]
+          submitted_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applications_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "authors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_events: {
         Row: {
           action: string
@@ -89,6 +142,63 @@ export type Database = {
           user_agent?: string | null
           user_id?: string | null
           wall_route?: string
+        }
+        Relationships: []
+      }
+      authors: {
+        Row: {
+          company: string | null
+          country: string | null
+          created_at: string
+          email: string
+          health_score: number
+          id: string
+          joined_at: string
+          name: string
+          products_count: number
+          rating: number | null
+          revenue: number
+          risk_score: number
+          royalties: number
+          status: Database["public"]["Enums"]["author_status"]
+          updated_at: string
+          verified: boolean
+        }
+        Insert: {
+          company?: string | null
+          country?: string | null
+          created_at?: string
+          email: string
+          health_score?: number
+          id?: string
+          joined_at?: string
+          name: string
+          products_count?: number
+          rating?: number | null
+          revenue?: number
+          risk_score?: number
+          royalties?: number
+          status?: Database["public"]["Enums"]["author_status"]
+          updated_at?: string
+          verified?: boolean
+        }
+        Update: {
+          company?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string
+          health_score?: number
+          id?: string
+          joined_at?: string
+          name?: string
+          products_count?: number
+          rating?: number | null
+          revenue?: number
+          risk_score?: number
+          royalties?: number
+          status?: Database["public"]["Enums"]["author_status"]
+          updated_at?: string
+          verified?: boolean
         }
         Relationships: []
       }
@@ -318,6 +428,16 @@ export type Database = {
     }
     Enums: {
       app_role: "boss" | "admin" | "reviewer" | "author"
+      application_stage:
+        | "registration"
+        | "identity"
+        | "kyc"
+        | "portfolio"
+        | "interview"
+        | "agreement"
+        | "approved"
+        | "rejected"
+      author_status: "verified" | "pending" | "suspended" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -446,6 +566,17 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["boss", "admin", "reviewer", "author"],
+      application_stage: [
+        "registration",
+        "identity",
+        "kyc",
+        "portfolio",
+        "interview",
+        "agreement",
+        "approved",
+        "rejected",
+      ],
+      author_status: ["verified", "pending", "suspended", "rejected"],
     },
   },
 } as const
