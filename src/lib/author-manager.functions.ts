@@ -647,7 +647,7 @@ export const listApplications = createServerFn({ method: "GET" })
       .order("updated_at", { ascending: false })
       .range((page - 1) * pageSize, page * pageSize - 1);
     if (data.search) q = q.or(`applicant_name.ilike.%${data.search}%,email.ilike.%${data.search}%`);
-    if (data.stage) q = q.eq("stage", data.stage);
+    if (data.stage) q = q.eq("stage", data.stage as any);
     const { data: rows, count, error } = await q;
     if (error) throw new Error(error.message);
     return { rows: rows ?? [], total: count ?? 0 };
@@ -685,7 +685,7 @@ export const advanceApplicationStage = createServerFn({ method: "POST" })
     await ensureBoss(context);
     const patch: Record<string, unknown> = { stage: data.stage };
     if (data.notes) patch.notes = data.notes;
-    const { data: row, error } = await context.supabase.from("applications").update(patch).eq("id", data.id).select().single();
+    const { data: row, error } = await context.supabase.from("applications").update(patch as any).eq("id", data.id).select().single();
     if (error) throw new Error(error.message);
     await logAudit(context, {
       entity: "application", entityId: row.id, action: `stage:${data.stage}`,
