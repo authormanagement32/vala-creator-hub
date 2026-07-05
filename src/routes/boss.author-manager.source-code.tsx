@@ -61,9 +61,11 @@ function SourceCodeWall() {
   const scan = useServerFn(runSecurityScan);
   const release = useServerFn(releaseRepo);
 
+  const hasSession = useHasSession();
   const { data, isLoading, isError, error } = useQuery({
     queryKey: useMemo(() => ["repos", { search, build, provider }], [search, build, provider]),
     queryFn: () => list({ data: { search, build, provider, page: 1, pageSize: 50 } }),
+    enabled: hasSession === true,
     retry: false,
   });
 
