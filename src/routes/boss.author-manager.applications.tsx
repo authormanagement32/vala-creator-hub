@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   listApplications, createApplication, advanceApplicationStage,
   approveApplication, rejectApplication, requestApplicationChanges, deleteApplication,
+  bulkUpdateApplications,
 } from "@/lib/author-manager.functions";
 
 export const Route = createFileRoute("/boss/author-manager/applications")({
