@@ -798,3 +798,157 @@ export const deleteApplication = createServerFn({ method: "POST" })
     });
     return { ok: true };
   });
+
+// ---- Bulk: Authors ----
+export const bulkUpdateAuthors = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    ids: z.array(z.string().uuid()).min(1).max(500),
+    action: z.enum(["verify", "pending", "suspend", "reject", "delete"]),
+    reason: z.string().trim().max(500).optional(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureBoss(context);
+    let count = 0;
+    if (data.action === "delete") {
+      const { error, count: c } = await context.supabase
+        .from("authors").delete({ count: "exact" }).in("id", data.ids);
+      if (error) throw new Error(error.message);
+      count = c ?? 0;
+    } else {
+      const status = data.action === "verify" ? "verified"
+        : data.action === "suspend" ? "suspended"
+        : data.action === "reject" ? "rejected" : "pending";
+      const { error, count: c } = await context.supabase.from("authors")
+        .update({ status, verified: status === "verified" }, { count: "exact" })
+        .in("id", data.ids);
+      if (error) throw new Error(error.message);
+      count = c ?? 0;
+    }
+    const sev = data.action === "delete" || data.action === "reject" || data.action === "suspend"
+      ? "danger" : data.action === "verify" ? "success" : "warn";
+    await logAudit(context, {
+      entity: "author", entityId: null, action: `bulk-${data.action}`,
+      summary: `Bulk ${data.action} on ${count} author(s)`,
+      metadata: { ids: data.ids, reason: data.reason ?? null }, severity: sev,
+    });
+    return { count };
+  });
+
+// ---- Bulk: Applications ----
+export const bulkUpdateApplications = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    ids: z.array(z.string().uuid()).min(1).max(500),
+    action: z.enum(["approve", "reject", "delete"]),
+    reason: z.string().trim().max(2000).optional(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureBoss(context);
+    let count = 0;
+    if (data.action === "delete") {
+      const { error, count: c } = await context.supabase
+        .from("applications").delete({ count: "exact" }).in("id", data.ids);
+      if (error) throw new Error(error.message);
+      count = c ?? 0;
+    } else if (data.action === "reject") {
+      if (!data.reason) throw new Error("Rejection reason is required.");
+      const { error, count: c } = await context.supabase.from("applications")
+        .update({ stage: "rejected", decided_at: new Date().toISOString(), notes: data.reason }, { count: "exact" })
+        .in("id", data.ids);
+      if (error) throw new Error(error.message);
+      count = c ?? 0;
+    } else {
+      // approve one-by-one so we can create/link author profiles
+      const { data: rows, error: rerr } = await context.supabase.from("applications")
+        .select("*").in("id", data.ids);
+      if (rerr) throw new Error(rerr.message);
+      for (const app of rows ?? []) {
+        if (app.stage === "approved" || app.stage === "rejected") continue;
+        let authorId = app.author_id as string | null;
+        if (!authorId) {
+          const { data: existing } = await context.supabase.from("authors").select("id").eq("email", app.email).maybeSingle();
+          if (existing) {
+            authorId = existing.id;
+            await context.supabase.from("authors").update({ status: "verified", verified: true }).eq("id", authorId);
+          } else {
+            const { data: newA, error: cerr } = await context.supabase.from("authors").insert({
+              name: app.applicant_name, email: app.email, country: app.country,
+              status: "verified", verified: true, joined_at: new Date().toISOString(),
+            }).select("id").single();
+            if (cerr) continue;
+            authorId = newA.id;
+          }
+        }
+        const { error: uerr } = await context.supabase.from("applications").update({
+          stage: "approved", decided_at: new Date().toISOString(), author_id: authorId,
+        }).eq("id", app.id);
+        if (!uerr) count++;
+      }
+    }
+    const sev = data.action === "approve" ? "success" : "danger";
+    await logAudit(context, {
+      entity: "application", entityId: null, action: `bulk-${data.action}`,
+      summary: `Bulk ${data.action} on ${count} application(s)`,
+      metadata: { ids: data.ids, reason: data.reason ?? null }, severity: sev,
+    });
+    return { count };
+  });
+
+// ---- Dashboard stats (public: returns zeros when signed out) ----
+export const getDashboardStats = createServerFn({ method: "GET" }).handler(async () => {
+  const empty = {
+    totalAuthors: 0, verifiedAuthors: 0, pendingAuthors: 0, suspendedAuthors: 0,
+    pendingApplications: 0, publishedProducts: 0, draftProducts: 0, pendingReviews: 0,
+    revenue: 0, royalties: 0, downloads: 0, activeLicenses: 0, supportTickets: 0,
+    reposLinked: 0, criticalVulns: 0,
+  };
+  const { getRequestHeader } = await import("@tanstack/react-start/server");
+  const auth = getRequestHeader("authorization");
+  if (!auth) return { authed: false, ...empty };
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const countOf = async (table: string, filter?: (q: any) => any) => {
+      let q = supabaseAdmin.from(table).select("*", { count: "exact", head: true });
+      if (filter) q = filter(q);
+      const { count } = await q;
+      return count ?? 0;
+    };
+    const sumOf = async (table: string, col: string) => {
+      const { data } = await supabaseAdmin.from(table).select(col);
+      return (data ?? []).reduce((n: number, r: any) => n + Number(r?.[col] ?? 0), 0);
+    };
+
+    const [
+      totalAuthors, verifiedAuthors, pendingAuthors, suspendedAuthors,
+      pendingApplications, publishedProducts, draftProducts, pendingReviews,
+      activeLicenses, reposLinked, criticalVulns,
+      revenue, royalties, downloads,
+    ] = await Promise.all([
+      countOf("authors"),
+      countOf("authors", (q) => q.eq("status", "verified")),
+      countOf("authors", (q) => q.eq("status", "pending")),
+      countOf("authors", (q) => q.eq("status", "suspended")),
+      countOf("applications", (q) => q.not("stage", "in", "(approved,rejected)")),
+      countOf("products", (q) => q.eq("status", "published")),
+      countOf("products", (q) => q.eq("status", "draft")),
+      countOf("products", (q) => q.eq("status", "review")),
+      countOf("licenses", (q) => q.eq("status", "active")).catch(() => 0),
+      countOf("source_repos"),
+      countOf("source_repos", (q) => q.gt("vuln_critical", 0)),
+      sumOf("authors", "revenue"),
+      sumOf("authors", "royalties"),
+      sumOf("products", "downloads"),
+    ]);
+    return {
+      authed: true,
+      totalAuthors, verifiedAuthors, pendingAuthors, suspendedAuthors,
+      pendingApplications, publishedProducts, draftProducts, pendingReviews,
+      revenue, royalties, downloads,
+      activeLicenses, supportTickets: 0,
+      reposLinked, criticalVulns,
+    };
+  } catch {
+    return { authed: true, ...empty };
+  }
+});
