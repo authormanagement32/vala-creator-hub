@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  listAuthors, createAuthor, updateAuthor, setAuthorVerification, deleteAuthor,
+  listAuthors, createAuthor, updateAuthor, setAuthorVerification, deleteAuthor, bulkUpdateAuthors,
 } from "@/lib/author-manager.functions";
 
 export const Route = createFileRoute("/boss/author-manager/authors")({
@@ -73,6 +73,7 @@ function AuthorsWall() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [selected, setSelected] = useState<AuthorRow | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
 
@@ -107,12 +108,37 @@ function AuthorsWall() {
     onSuccess: () => { toast.success("Author deleted"); invalidate(); setSelected(null); },
     onError: (e: any) => toast.error(e?.message ?? "Delete failed"),
   });
+  const bulk = useMutation({
+    mutationFn: useServerFn(bulkUpdateAuthors),
+    onSuccess: (r: any, v: any) => { toast.success(`Bulk ${v.data.action} on ${r.count} author(s)`); setSelectedIds(new Set()); invalidate(); invalidateAudit(); },
+    onError: (e: any) => toast.error(e?.message ?? "Bulk action failed"),
+  });
+  const rows = (data?.rows ?? []) as AuthorRow[];
+  const allSelected = rows.length > 0 && selectedIds.size === rows.length;
 
   return (
     <WallShell
       title="Authors"
       subtitle="Master directory of every software author, publisher, and creator."
       count={data?.total}
+      actions={selectedIds.size > 0 ? (
+        <>
+          <span className="text-xs text-muted-foreground">{selectedIds.size} selected</span>
+          <Button size="sm" variant="secondary" disabled={bulk.isPending}
+            onClick={() => bulk.mutate({ data: { ids: [...selectedIds], action: "verify" } })}>Verify</Button>
+          <Button size="sm" variant="outline" disabled={bulk.isPending}
+            onClick={() => {
+              const reason = window.prompt("Suspension reason (optional)?") ?? "";
+              bulk.mutate({ data: { ids: [...selectedIds], action: "suspend", reason: reason || undefined } });
+            }}>Suspend</Button>
+          <Button size="sm" variant="destructive" disabled={bulk.isPending}
+            onClick={() => {
+              if (window.confirm(`Delete ${selectedIds.size} author(s)? Cannot be undone.`))
+                bulk.mutate({ data: { ids: [...selectedIds], action: "delete" } });
+            }}>Delete</Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>Clear</Button>
+        </>
+      ) : null}
     >
       <FilterBar
         search={search}
@@ -128,9 +154,30 @@ function AuthorsWall() {
         onCreate={() => setShowCreate(true)}
         createLabel="Add author"
       />
+      {rows.length > 0 && (
+        <label className="mb-1 flex items-center gap-1.5 px-1 text-[11px] text-muted-foreground">
+          <input type="checkbox" checked={allSelected}
+            onChange={(e) => setSelectedIds(e.target.checked ? new Set(rows.map((r) => r.id)) : new Set())} />
+          Select all on page ({rows.length})
+        </label>
+      )}
       <DataTable
-        columns={columns}
-        rows={(data?.rows ?? []) as AuthorRow[]}
+        columns={[{
+          id: "select", header: "", width: "0.3",
+          cell: (r: AuthorRow) => (
+            <input
+              type="checkbox"
+              checked={selectedIds.has(r.id)}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => {
+                const next = new Set(selectedIds);
+                if (e.currentTarget.checked) next.add(r.id); else next.delete(r.id);
+                setSelectedIds(next);
+              }}
+            />
+          ),
+        }, ...columns]}
+        rows={rows}
         state={state}
         rowKey={(r) => r.id}
         onRowClick={setSelected}

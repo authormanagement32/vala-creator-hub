@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   listApplications, createApplication, advanceApplicationStage,
   approveApplication, rejectApplication, requestApplicationChanges, deleteApplication,
+  bulkUpdateApplications,
 } from "@/lib/author-manager.functions";
 
 export const Route = createFileRoute("/boss/author-manager/applications")({
@@ -59,8 +60,9 @@ function ApplicationsWall() {
   const [search, setSearch] = useState("");
   const [stage, setStage] = useState("");
   const [selected, setSelected] = useState<AppRow | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showInvite, setShowInvite] = useState(false);
-  const [dialog, setDialog] = useState<null | "approve" | "reject" | "changes">(null);
+  const [dialog, setDialog] = useState<null | "approve" | "reject" | "changes" | "bulkReject">(null);
 
   const listFn = useServerFn(listApplications);
   const { data, isLoading, isError } = useQuery({
@@ -106,6 +108,13 @@ function ApplicationsWall() {
     onSuccess: () => { toast.success("Application deleted"); invalidate(); setSelected(null); },
     onError: (e: any) => toast.error(e?.message ?? "Delete failed"),
   });
+  const bulk = useMutation({
+    mutationFn: useServerFn(bulkUpdateApplications),
+    onSuccess: (r: any, v: any) => { toast.success(`Bulk ${v.data.action} on ${r.count} application(s)`); setSelectedIds(new Set()); setDialog(null); invalidate(); },
+    onError: (e: any) => toast.error(e?.message ?? "Bulk action failed"),
+  });
+  const rows = (data?.rows ?? []) as AppRow[];
+  const allSelected = rows.length > 0 && selectedIds.size === rows.length;
 
   const isDecided = selected?.stage === "approved" || selected?.stage === "rejected";
 
@@ -114,6 +123,24 @@ function ApplicationsWall() {
       title="Applications"
       subtitle="Author onboarding pipeline — registration through agreement."
       count={data?.total}
+      actions={selectedIds.size > 0 ? (
+        <>
+          <span className="text-xs text-muted-foreground">{selectedIds.size} selected</span>
+          <Button size="sm" variant="secondary" disabled={bulk.isPending}
+            onClick={() => {
+              if (window.confirm(`Approve ${selectedIds.size} application(s)? Author profiles will be created/verified.`))
+                bulk.mutate({ data: { ids: [...selectedIds], action: "approve" } });
+            }}>Approve</Button>
+          <Button size="sm" variant="outline" disabled={bulk.isPending}
+            onClick={() => setDialog("bulkReject")}>Reject</Button>
+          <Button size="sm" variant="destructive" disabled={bulk.isPending}
+            onClick={() => {
+              if (window.confirm(`Delete ${selectedIds.size} application(s)? Cannot be undone.`))
+                bulk.mutate({ data: { ids: [...selectedIds], action: "delete" } });
+            }}>Delete</Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>Clear</Button>
+        </>
+      ) : null}
     >
       <FilterBar
         search={search}
@@ -124,9 +151,30 @@ function ApplicationsWall() {
         onCreate={() => setShowInvite(true)}
         createLabel="Invite author"
       />
+      {rows.length > 0 && (
+        <label className="mb-1 flex items-center gap-1.5 px-1 text-[11px] text-muted-foreground">
+          <input type="checkbox" checked={allSelected}
+            onChange={(e) => setSelectedIds(e.target.checked ? new Set(rows.map((r) => r.id)) : new Set())} />
+          Select all on page ({rows.length})
+        </label>
+      )}
       <DataTable
-        columns={columns}
-        rows={(data?.rows ?? []) as AppRow[]}
+        columns={[{
+          id: "select", header: "", width: "0.3",
+          cell: (r: AppRow) => (
+            <input
+              type="checkbox"
+              checked={selectedIds.has(r.id)}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => {
+                const next = new Set(selectedIds);
+                if (e.currentTarget.checked) next.add(r.id); else next.delete(r.id);
+                setSelectedIds(next);
+              }}
+            />
+          ),
+        }, ...columns]}
+        rows={rows}
         state={state}
         rowKey={(r) => r.id}
         onRowClick={setSelected}
@@ -220,6 +268,12 @@ function ApplicationsWall() {
         title="Request changes" label="Message to applicant" submitLabel="Send" required
         pending={requestChanges.isPending}
         onSubmit={(text) => selected && requestChanges.mutate({ data: { id: selected.id, message: text } })}
+      />
+      <ReasonDialog
+        open={dialog === "bulkReject"} onClose={() => setDialog(null)}
+        title={`Reject ${selectedIds.size} application(s)`} label="Rejection reason (applied to all selected)"
+        submitLabel="Reject all" required pending={bulk.isPending} destructive
+        onSubmit={(text) => bulk.mutate({ data: { ids: [...selectedIds], action: "reject", reason: text } })}
       />
     </WallShell>
   );
