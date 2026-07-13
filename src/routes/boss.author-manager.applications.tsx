@@ -60,8 +60,9 @@ function ApplicationsWall() {
   const [search, setSearch] = useState("");
   const [stage, setStage] = useState("");
   const [selected, setSelected] = useState<AppRow | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showInvite, setShowInvite] = useState(false);
-  const [dialog, setDialog] = useState<null | "approve" | "reject" | "changes">(null);
+  const [dialog, setDialog] = useState<null | "approve" | "reject" | "changes" | "bulkReject">(null);
 
   const listFn = useServerFn(listApplications);
   const { data, isLoading, isError } = useQuery({
