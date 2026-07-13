@@ -65,35 +65,32 @@ export function useProductVersions(productId: string | null) {
 }
 
 export interface DashboardStats {
+  authed?: boolean;
   totalAuthors: number;
-  pendingApplications: number;
   verifiedAuthors: number;
+  pendingAuthors?: number;
   suspendedAuthors: number;
+  pendingApplications: number;
   publishedProducts: number;
+  draftProducts?: number;
   pendingReviews: number;
   revenue: number;
   royalties: number;
   downloads: number;
   activeLicenses: number;
   supportTickets: number;
+  reposLinked?: number;
 }
 
 export function useDashboardStats() {
-  return useQuery({
+  return useQuery<DashboardStats>({
     queryKey: ["author-manager", "dashboard-stats"],
-    queryFn: async (): Promise<DashboardStats> => ({
-      totalAuthors: 0,
-      pendingApplications: 0,
-      verifiedAuthors: 0,
-      suspendedAuthors: 0,
-      publishedProducts: 0,
-      pendingReviews: 0,
-      revenue: 0,
-      royalties: 0,
-      downloads: 0,
-      activeLicenses: 0,
-      supportTickets: 0,
-    }),
+    queryFn: async (): Promise<DashboardStats> => {
+      const { getDashboardStats } = await import("@/lib/author-manager.functions");
+      return (await getDashboardStats()) as DashboardStats;
+    },
+    retry: false,
+    staleTime: 30_000,
   });
 }
 
