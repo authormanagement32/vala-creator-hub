@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  listAuthors, createAuthor, updateAuthor, setAuthorVerification, deleteAuthor,
+  listAuthors, createAuthor, updateAuthor, setAuthorVerification, deleteAuthor, bulkUpdateAuthors,
 } from "@/lib/author-manager.functions";
 
 export const Route = createFileRoute("/boss/author-manager/authors")({
