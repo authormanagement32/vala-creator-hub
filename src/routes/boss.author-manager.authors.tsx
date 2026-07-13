@@ -136,9 +136,30 @@ function AuthorsWall() {
         onCreate={() => setShowCreate(true)}
         createLabel="Add author"
       />
+      {rows.length > 0 && (
+        <label className="mb-1 flex items-center gap-1.5 px-1 text-[11px] text-muted-foreground">
+          <input type="checkbox" checked={allSelected}
+            onChange={(e) => setSelectedIds(e.target.checked ? new Set(rows.map((r) => r.id)) : new Set())} />
+          Select all on page ({rows.length})
+        </label>
+      )}
       <DataTable
-        columns={columns}
-        rows={(data?.rows ?? []) as AuthorRow[]}
+        columns={[{
+          id: "select", header: "", width: "0.3",
+          cell: (r: AuthorRow) => (
+            <input
+              type="checkbox"
+              checked={selectedIds.has(r.id)}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => {
+                const next = new Set(selectedIds);
+                if (e.currentTarget.checked) next.add(r.id); else next.delete(r.id);
+                setSelectedIds(next);
+              }}
+            />
+          ),
+        }, ...columns]}
+        rows={rows}
         state={state}
         rowKey={(r) => r.id}
         onRowClick={setSelected}
