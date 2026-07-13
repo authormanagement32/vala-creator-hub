@@ -950,7 +950,7 @@ export const getDashboardStats = createServerFn({ method: "GET" }).handler(async
       pendingApplications, publishedProducts, draftProducts, pendingReviews,
       revenue, royalties, downloads,
       activeLicenses, supportTickets: 0,
-      reposLinked, criticalVulns,
+      reposLinked, criticalVulns: 0,
     };
   } catch {
     return { authed: true, ...empty };
