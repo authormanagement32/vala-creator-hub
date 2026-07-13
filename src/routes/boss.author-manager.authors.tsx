@@ -108,6 +108,13 @@ function AuthorsWall() {
     onSuccess: () => { toast.success("Author deleted"); invalidate(); setSelected(null); },
     onError: (e: any) => toast.error(e?.message ?? "Delete failed"),
   });
+  const bulk = useMutation({
+    mutationFn: useServerFn(bulkUpdateAuthors),
+    onSuccess: (r: any, v: any) => { toast.success(`Bulk ${v.data.action} on ${r.count} author(s)`); setSelectedIds(new Set()); invalidate(); invalidateAudit(); },
+    onError: (e: any) => toast.error(e?.message ?? "Bulk action failed"),
+  });
+  const rows = (data?.rows ?? []) as AuthorRow[];
+  const allSelected = rows.length > 0 && selectedIds.size === rows.length;
 
   return (
     <WallShell
