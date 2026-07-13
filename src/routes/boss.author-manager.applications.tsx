@@ -108,6 +108,13 @@ function ApplicationsWall() {
     onSuccess: () => { toast.success("Application deleted"); invalidate(); setSelected(null); },
     onError: (e: any) => toast.error(e?.message ?? "Delete failed"),
   });
+  const bulk = useMutation({
+    mutationFn: useServerFn(bulkUpdateApplications),
+    onSuccess: (r: any, v: any) => { toast.success(`Bulk ${v.data.action} on ${r.count} application(s)`); setSelectedIds(new Set()); setDialog(null); invalidate(); },
+    onError: (e: any) => toast.error(e?.message ?? "Bulk action failed"),
+  });
+  const rows = (data?.rows ?? []) as AppRow[];
+  const allSelected = rows.length > 0 && selectedIds.size === rows.length;
 
   const isDecided = selected?.stage === "approved" || selected?.stage === "rejected";
 
