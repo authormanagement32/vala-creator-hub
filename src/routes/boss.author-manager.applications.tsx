@@ -269,6 +269,12 @@ function ApplicationsWall() {
         pending={requestChanges.isPending}
         onSubmit={(text) => selected && requestChanges.mutate({ data: { id: selected.id, message: text } })}
       />
+      <ReasonDialog
+        open={dialog === "bulkReject"} onClose={() => setDialog(null)}
+        title={`Reject ${selectedIds.size} application(s)`} label="Rejection reason (applied to all selected)"
+        submitLabel="Reject all" required pending={bulk.isPending} destructive
+        onSubmit={(text) => bulk.mutate({ data: { ids: [...selectedIds], action: "reject", reason: text } })}
+      />
     </WallShell>
   );
 }
