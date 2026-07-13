@@ -910,20 +910,24 @@ export const getDashboardStats = createServerFn({ method: "GET" }).handler(async
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const sb = supabaseAdmin as any;
     const countOf = async (table: string, filter?: (q: any) => any) => {
-      let q = sb.from(table).select("*", { count: "exact", head: true });
-      if (filter) q = filter(q);
-      const { count } = await q;
-      return count ?? 0;
+      try {
+        let q = sb.from(table).select("*", { count: "exact", head: true });
+        if (filter) q = filter(q);
+        const { count } = await q;
+        return count ?? 0;
+      } catch { return 0; }
     };
     const sumOf = async (table: string, col: string) => {
-      const { data } = await sb.from(table).select(col);
-      return (data ?? []).reduce((n: number, r: any) => n + Number(r?.[col] ?? 0), 0);
+      try {
+        const { data } = await sb.from(table).select(col);
+        return (data ?? []).reduce((n: number, r: any) => n + Number(r?.[col] ?? 0), 0);
+      } catch { return 0; }
     };
 
     const [
       totalAuthors, verifiedAuthors, pendingAuthors, suspendedAuthors,
       pendingApplications, publishedProducts, draftProducts, pendingReviews,
-      activeLicenses, reposLinked, criticalVulns,
+      activeLicenses, reposLinked,
       revenue, royalties, downloads,
     ] = await Promise.all([
       countOf("authors"),
@@ -934,9 +938,8 @@ export const getDashboardStats = createServerFn({ method: "GET" }).handler(async
       countOf("products", (q) => q.eq("status", "published")),
       countOf("products", (q) => q.eq("status", "draft")),
       countOf("products", (q) => q.eq("status", "review")),
-      countOf("licenses", (q) => q.eq("status", "active")).catch(() => 0),
+      countOf("licenses", (q) => q.eq("status", "active")),
       countOf("source_repos"),
-      countOf("source_repos", (q) => q.gt("vuln_critical", 0)),
       sumOf("authors", "revenue"),
       sumOf("authors", "royalties"),
       sumOf("products", "downloads"),
