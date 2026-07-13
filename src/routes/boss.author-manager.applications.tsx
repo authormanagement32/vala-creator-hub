@@ -123,6 +123,24 @@ function ApplicationsWall() {
       title="Applications"
       subtitle="Author onboarding pipeline — registration through agreement."
       count={data?.total}
+      actions={selectedIds.size > 0 ? (
+        <>
+          <span className="text-xs text-muted-foreground">{selectedIds.size} selected</span>
+          <Button size="sm" variant="secondary" disabled={bulk.isPending}
+            onClick={() => {
+              if (window.confirm(`Approve ${selectedIds.size} application(s)? Author profiles will be created/verified.`))
+                bulk.mutate({ data: { ids: [...selectedIds], action: "approve" } });
+            }}>Approve</Button>
+          <Button size="sm" variant="outline" disabled={bulk.isPending}
+            onClick={() => setDialog("bulkReject")}>Reject</Button>
+          <Button size="sm" variant="destructive" disabled={bulk.isPending}
+            onClick={() => {
+              if (window.confirm(`Delete ${selectedIds.size} application(s)? Cannot be undone.`))
+                bulk.mutate({ data: { ids: [...selectedIds], action: "delete" } });
+            }}>Delete</Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>Clear</Button>
+        </>
+      ) : null}
     >
       <FilterBar
         search={search}
@@ -133,9 +151,30 @@ function ApplicationsWall() {
         onCreate={() => setShowInvite(true)}
         createLabel="Invite author"
       />
+      {rows.length > 0 && (
+        <label className="mb-1 flex items-center gap-1.5 px-1 text-[11px] text-muted-foreground">
+          <input type="checkbox" checked={allSelected}
+            onChange={(e) => setSelectedIds(e.target.checked ? new Set(rows.map((r) => r.id)) : new Set())} />
+          Select all on page ({rows.length})
+        </label>
+      )}
       <DataTable
-        columns={columns}
-        rows={(data?.rows ?? []) as AppRow[]}
+        columns={[{
+          id: "select", header: "", width: "0.3",
+          cell: (r: AppRow) => (
+            <input
+              type="checkbox"
+              checked={selectedIds.has(r.id)}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => {
+                const next = new Set(selectedIds);
+                if (e.currentTarget.checked) next.add(r.id); else next.delete(r.id);
+                setSelectedIds(next);
+              }}
+            />
+          ),
+        }, ...columns]}
+        rows={rows}
         state={state}
         rowKey={(r) => r.id}
         onRowClick={setSelected}
