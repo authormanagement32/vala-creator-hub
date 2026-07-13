@@ -121,6 +121,24 @@ function AuthorsWall() {
       title="Authors"
       subtitle="Master directory of every software author, publisher, and creator."
       count={data?.total}
+      actions={selectedIds.size > 0 ? (
+        <>
+          <span className="text-xs text-muted-foreground">{selectedIds.size} selected</span>
+          <Button size="sm" variant="secondary" disabled={bulk.isPending}
+            onClick={() => bulk.mutate({ data: { ids: [...selectedIds], action: "verify" } })}>Verify</Button>
+          <Button size="sm" variant="outline" disabled={bulk.isPending}
+            onClick={() => {
+              const reason = window.prompt("Suspension reason (optional)?") ?? "";
+              bulk.mutate({ data: { ids: [...selectedIds], action: "suspend", reason: reason || undefined } });
+            }}>Suspend</Button>
+          <Button size="sm" variant="destructive" disabled={bulk.isPending}
+            onClick={() => {
+              if (window.confirm(`Delete ${selectedIds.size} author(s)? Cannot be undone.`))
+                bulk.mutate({ data: { ids: [...selectedIds], action: "delete" } });
+            }}>Delete</Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>Clear</Button>
+        </>
+      ) : null}
     >
       <FilterBar
         search={search}
