@@ -1,59 +1,47 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Activity, Download, ShieldCheck } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { toast } from "sonner";
+import { createFileRoute } from "@tanstack/react-router";
+import { Activity, Download } from "lucide-react";
 import { WallShell } from "@/features/author-manager/components/WallShell";
 import { KpiCard } from "@/features/author-manager/components/KpiCard";
 import { EmptyState } from "@/features/author-manager/components/EmptyState";
 import { useDashboardStats } from "@/features/author-manager/data";
 import { fmtMoney, fmtNumber } from "@/features/author-manager/format";
-import { whoAmI, claimBossRole } from "@/lib/author-manager.functions";
 
 export const Route = createFileRoute("/boss/author-manager/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — Author Manager" }] }),
+  head: () => ({
+    meta: [
+      { title: "Dashboard — Author Manager" },
+      {
+        name: "description",
+        content:
+          "Author program health, revenue, royalties, and operations at a glance inside the Software Vala boss panel.",
+      },
+      { property: "og:title", content: "Dashboard — Author Manager" },
+      {
+        property: "og:description",
+        content: "Author program health, revenue, royalties, and operations at a glance.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: DashboardWall,
 });
 
 function DashboardWall() {
   const { data } = useDashboardStats();
   const s = data;
-  const me = useServerFn(whoAmI);
-  const claim = useServerFn(claimBossRole);
-  const qc = useQueryClient();
-  const meQ = useQuery({ queryKey: ["whoami"], queryFn: () => me(), retry: false });
-  const claimM = useMutation({
-    mutationFn: () => claim(),
-    onSuccess: () => { toast.success("Boss role claimed"); qc.invalidateQueries(); },
-    onError: (e: any) => toast.error(e.message),
-  });
-  const needsAuth = meQ.data && !meQ.data.authed;
-  const needsClaim = meQ.data && meQ.data.authed && !meQ.data.isBoss;
 
   return (
     <WallShell
       title="Dashboard"
       subtitle="Global author program health, revenue, and operations."
       actions={
-        <button className="flex h-9 items-center gap-1.5 rounded-md border border-hairline px-3 text-sm hover:bg-surface-2">
+        <button className="flex h-10 items-center gap-1.5 rounded-full border border-border bg-surface px-4 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground">
           <Download className="h-3.5 w-3.5" /> Export snapshot
         </button>
       }
     >
-      {needsAuth && (
-        <div className="flex items-center justify-between rounded-md border border-brand/40 bg-brand/5 p-3 text-xs">
-          <span>Sign in to manage authors, products, and audits.</span>
-          <Link to="/auth" className="rounded-md bg-brand px-3 py-1.5 font-medium text-brand-foreground">Sign in</Link>
-        </div>
-      )}
-      {needsClaim && (
-        <div className="flex items-center justify-between rounded-md border border-warning/40 bg-warning/5 p-3 text-xs">
-          <span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> You are signed in but don't have the boss role.</span>
-          <button disabled={claimM.isPending} onClick={() => claimM.mutate()} className="rounded-md bg-brand px-3 py-1.5 font-medium text-brand-foreground disabled:opacity-50">
-            {claimM.isPending ? "Claiming…" : "Claim boss role"}
-          </button>
-        </div>
-      )}
+
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <KpiCard label="Total authors" value={fmtNumber(s?.totalAuthors)} tone="brand" />
         <KpiCard label="Verified" value={fmtNumber(s?.verifiedAuthors)} tone="success" />
