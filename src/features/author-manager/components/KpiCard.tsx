@@ -18,7 +18,7 @@ const toneMap: Record<NonNullable<Props["tone"]>, string> = {
 
 export function KpiCard({ label, value, hint, tone = "default" }: Props) {
   return (
-    <div className="rounded-lg border border-hairline bg-card p-4">
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
       <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
         {label}
       </div>
