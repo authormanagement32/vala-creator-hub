@@ -1,12 +1,8 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { TopBar } from "@/features/author-manager/components/TopBar";
+import { AppSidebar, useSidebarState } from "@/features/author-manager/components/AppSidebar";
 import { CommandPalette } from "@/features/author-manager/components/CommandPalette";
-import {
-  AuthGateBanner,
-  useAuthGateBridge,
-} from "@/features/author-manager/auth-gate";
 
 export const Route = createFileRoute("/boss/author-manager")({
   head: () => ({
@@ -25,8 +21,8 @@ export const Route = createFileRoute("/boss/author-manager")({
 function AuthorManagerLayout() {
   const [search, setSearch] = useState("");
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const qc = useQueryClient();
-  useAuthGateBridge(qc);
+  const { collapsed, toggleCollapsed, mobileOpen, setMobileOpen } = useSidebarState();
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -39,13 +35,26 @@ function AuthorManagerLayout() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <TopBar search={search} onSearch={setSearch} onOpenPalette={() => setPaletteOpen(true)} />
-      <AuthGateBanner />
-      <main>
-        <Outlet />
-      </main>
+    <div className="flex min-h-screen w-full bg-background text-foreground">
+      <AppSidebar
+        collapsed={collapsed}
+        onToggleCollapsed={toggleCollapsed}
+        mobileOpen={mobileOpen}
+        onCloseMobile={() => setMobileOpen(false)}
+      />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <TopBar
+          search={search}
+          onSearch={setSearch}
+          onOpenPalette={() => setPaletteOpen(true)}
+          onOpenMenu={() => setMobileOpen(true)}
+        />
+        <main className="min-w-0 flex-1">
+          <Outlet />
+        </main>
+      </div>
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
   );
