@@ -58,7 +58,7 @@ function DashboardWall() {
       </section>
 
       <section className="mt-6 grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2 rounded-lg border border-hairline bg-card p-4">
+        <div className="lg:col-span-2 bento-card p-5">
           <div className="mb-3 flex items-center justify-between">
             <div>
               <div className="text-sm font-semibold">Recent submissions</div>
@@ -73,7 +73,7 @@ function DashboardWall() {
             description="When authors submit products for review, they appear here in realtime."
           />
         </div>
-        <div className="rounded-lg border border-hairline bg-card p-4">
+        <div className="bento-card p-5">
           <div className="mb-3 text-sm font-semibold">Live activity</div>
           <EmptyState
             title="Quiet"
