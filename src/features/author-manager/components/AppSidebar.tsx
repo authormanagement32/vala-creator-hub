@@ -136,7 +136,7 @@ export function AppSidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMo
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Find a wall…"
+              placeholder="Find a module…"
               className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground"
             />
           </div>
@@ -144,13 +144,12 @@ export function AppSidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMo
       )}
 
       <nav className="scrollbar-thin flex-1 space-y-3 overflow-y-auto px-2 py-3">
-        {!filtered && (
-          <div className="space-y-0.5">
-            {PRIMARY_WALLS.map((item) => (
-              <ItemLink key={item.to} item={item} />
-            ))}
-          </div>
-        )}
+        <div className="space-y-0.5">
+          {PRIMARY_WALLS.map((item) => (
+            <ItemLink key={item.to} item={item} />
+          ))}
+        </div>
+
 
         {(filtered ?? NAV_GROUPS).map((group) => {
           const open = filtered ? true : groupOpen(group.label, group.items);
