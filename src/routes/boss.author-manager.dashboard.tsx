@@ -1,6 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Activity, Download } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  Activity, ArrowUpRight, Ban, Download, Inbox, KeyRound, LifeBuoy, Package,
+  ShieldCheck, Sparkles, Star, TrendingUp, Users, Wallet,
+} from "lucide-react";
 import { WallShell } from "@/features/author-manager/components/WallShell";
+import { WallHero } from "@/features/author-manager/components/WallHero";
+
 import { KpiCard } from "@/features/author-manager/components/KpiCard";
 import { EmptyState } from "@/features/author-manager/components/EmptyState";
 import { useDashboardStats } from "@/features/author-manager/data";
