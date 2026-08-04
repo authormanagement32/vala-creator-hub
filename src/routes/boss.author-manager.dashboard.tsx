@@ -1,6 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Activity, Download } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  Activity, ArrowUpRight, Ban, Download, Inbox, KeyRound, LifeBuoy, Package,
+  ShieldCheck, Sparkles, Star, TrendingUp, Users, Wallet,
+} from "lucide-react";
 import { WallShell } from "@/features/author-manager/components/WallShell";
+import { WallHero } from "@/features/author-manager/components/WallHero";
+
 import { KpiCard } from "@/features/author-manager/components/KpiCard";
 import { EmptyState } from "@/features/author-manager/components/EmptyState";
 import { useDashboardStats } from "@/features/author-manager/data";
@@ -31,6 +36,8 @@ function DashboardWall() {
   const { data } = useDashboardStats();
   const s = data;
 
+  const live = Boolean(s?.authed);
+
   return (
     <WallShell
       title="Dashboard"
@@ -41,21 +48,52 @@ function DashboardWall() {
         </button>
       }
     >
+      <WallHero
+        eyebrow="Software Vala Author Program"
+        title="Hello, Boss"
+        description="Manage authors, catalog, royalties and operations — all from one control panel."
+        live={live}
+        liveLabel="database"
+        actions={
+          <>
+            <Link
+              to="/boss/author-manager/authors"
+              className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-primary transition hover:bg-white/90"
+            >
+              Open Author Directory <ArrowUpRight className="h-4 w-4" />
+            </Link>
+            <Link
+              to="/boss/author-manager/applications"
+              className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/15 px-5 py-2.5 text-sm font-medium backdrop-blur transition hover:bg-white/25"
+            >
+              <Sparkles className="h-4 w-4" /> Review Applications
+            </Link>
+          </>
+        }
+        panelTitle="Program Snapshot"
+        panelSubtitle={live ? "Live from your database" : "Awaiting live signals"}
+        stats={[
+          { label: "Authors", value: fmtNumber(s?.totalAuthors) },
+          { label: "Verified", value: fmtNumber(s?.verifiedAuthors) },
+          { label: "Pending", value: fmtNumber(s?.pendingApplications) },
+        ]}
+      />
 
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <KpiCard label="Total authors" value={fmtNumber(s?.totalAuthors)} tone="brand" />
-        <KpiCard label="Verified" value={fmtNumber(s?.verifiedAuthors)} tone="success" />
-        <KpiCard label="Pending applications" value={fmtNumber(s?.pendingApplications)} tone="warning" />
-        <KpiCard label="Suspended" value={fmtNumber(s?.suspendedAuthors)} tone="danger" />
-        <KpiCard label="Published products" value={fmtNumber(s?.publishedProducts)} />
-        <KpiCard label="Pending reviews" value={fmtNumber(s?.pendingReviews)} tone="warning" />
-        <KpiCard label="Revenue" value={fmtMoney(s?.revenue)} tone="success" />
-        <KpiCard label="Royalties" value={fmtMoney(s?.royalties)} />
-        <KpiCard label="Downloads" value={fmtNumber(s?.downloads)} />
-        <KpiCard label="Active licenses" value={fmtNumber(s?.activeLicenses)} />
-        <KpiCard label="Support tickets" value={fmtNumber(s?.supportTickets)} tone="info" />
-        <KpiCard label="Health" value="—" hint="Awaiting live signals" />
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-6">
+        <KpiCard label="Total authors" value={fmtNumber(s?.totalAuthors)} icon={Users} tone="brand" />
+        <KpiCard label="Verified" value={fmtNumber(s?.verifiedAuthors)} icon={ShieldCheck} tone="success" />
+        <KpiCard label="Pending applications" value={fmtNumber(s?.pendingApplications)} icon={Inbox} tone="warning" />
+        <KpiCard label="Suspended" value={fmtNumber(s?.suspendedAuthors)} icon={Ban} tone="danger" />
+        <KpiCard label="Published products" value={fmtNumber(s?.publishedProducts)} icon={Package} />
+        <KpiCard label="Pending reviews" value={fmtNumber(s?.pendingReviews)} icon={Star} tone="warning" />
+        <KpiCard label="Revenue" value={fmtMoney(s?.revenue)} icon={TrendingUp} tone="success" />
+        <KpiCard label="Royalties" value={fmtMoney(s?.royalties)} icon={Wallet} />
+        <KpiCard label="Downloads" value={fmtNumber(s?.downloads)} icon={Download} />
+        <KpiCard label="Active licenses" value={fmtNumber(s?.activeLicenses)} icon={KeyRound} />
+        <KpiCard label="Support tickets" value={fmtNumber(s?.supportTickets)} icon={LifeBuoy} tone="info" />
+        <KpiCard label="Health" value="—" hint="Awaiting live signals" icon={Activity} />
       </section>
+
 
       <section className="mt-6 grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2 bento-card p-5">
