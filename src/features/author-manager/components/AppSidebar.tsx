@@ -45,7 +45,8 @@ export function AppSidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMo
   const [query, setQuery] = useState("");
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
-  const isActive = (to: string) => pathname.startsWith(to);
+  const isActive = (to: string) =>
+    pathname === to || pathname.startsWith(to + "/");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -62,8 +63,10 @@ export function AppSidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMo
   const ItemLink = ({ item }: { item: WallNavItem }) => (
     <Link
       to={item.to}
+      preload="intent"
       onClick={onCloseMobile}
       title={collapsed ? item.label : undefined}
+      aria-current={isActive(item.to) ? "page" : undefined}
       className={cn(
         "group/item flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-all duration-200",
         collapsed && "justify-center px-0",
@@ -76,6 +79,7 @@ export function AppSidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMo
       {!collapsed && <span className="truncate">{item.label}</span>}
     </Link>
   );
+
 
   const content = (
     <div className="flex h-full flex-col">
