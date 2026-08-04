@@ -45,7 +45,8 @@ export function AppSidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMo
   const [query, setQuery] = useState("");
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
-  const isActive = (to: string) => pathname.startsWith(to);
+  const isActive = (to: string) =>
+    pathname === to || pathname.startsWith(to + "/");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -62,8 +63,10 @@ export function AppSidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMo
   const ItemLink = ({ item }: { item: WallNavItem }) => (
     <Link
       to={item.to}
+      preload="intent"
       onClick={onCloseMobile}
       title={collapsed ? item.label : undefined}
+      aria-current={isActive(item.to) ? "page" : undefined}
       className={cn(
         "group/item flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-all duration-200",
         collapsed && "justify-center px-0",
@@ -76,6 +79,7 @@ export function AppSidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMo
       {!collapsed && <span className="truncate">{item.label}</span>}
     </Link>
   );
+
 
   const content = (
     <div className="flex h-full flex-col">
@@ -132,7 +136,7 @@ export function AppSidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMo
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Find a wall…"
+              placeholder="Find a module…"
               className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground"
             />
           </div>
@@ -140,13 +144,12 @@ export function AppSidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMo
       )}
 
       <nav className="scrollbar-thin flex-1 space-y-3 overflow-y-auto px-2 py-3">
-        {!filtered && (
-          <div className="space-y-0.5">
-            {PRIMARY_WALLS.map((item) => (
-              <ItemLink key={item.to} item={item} />
-            ))}
-          </div>
-        )}
+        <div className="space-y-0.5">
+          {PRIMARY_WALLS.map((item) => (
+            <ItemLink key={item.to} item={item} />
+          ))}
+        </div>
+
 
         {(filtered ?? NAV_GROUPS).map((group) => {
           const open = filtered ? true : groupOpen(group.label, group.items);
