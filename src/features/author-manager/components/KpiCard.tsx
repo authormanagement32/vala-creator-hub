@@ -1,29 +1,36 @@
 import type { ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
 
 interface Props {
   label: string;
   value: ReactNode;
   hint?: string;
+  icon?: LucideIcon;
   tone?: "default" | "success" | "warning" | "danger" | "info" | "brand";
 }
 
 const toneMap: Record<NonNullable<Props["tone"]>, string> = {
-  default: "text-foreground",
-  success: "text-success",
-  warning: "text-warning",
-  danger: "text-danger",
-  info: "text-info",
-  brand: "text-brand",
+  default: "text-primary-glow",
+  success: "text-accent-emerald",
+  warning: "text-accent-amber",
+  danger: "text-accent-pink",
+  info: "text-primary-glow",
+  brand: "text-accent-pink",
 };
 
-export function KpiCard({ label, value, hint, tone = "default" }: Props) {
+/** KPI tile — same shape as the Creator's Launchpad dashboard KPI card. */
+export function KpiCard({ label, value, hint, icon: Icon, tone = "default" }: Props) {
+  const tint = toneMap[tone];
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
-      <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
+    <div className="bento-card !p-4">
+      <div className="flex items-start justify-between">
+        <div className="min-w-0">
+          <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</p>
+          <p className="mt-1 truncate text-xl font-bold tabular-nums">{value}</p>
+        </div>
+        {Icon && <Icon className={`h-4 w-4 shrink-0 ${tint}`} aria-hidden />}
       </div>
-      <div className={`mt-2 text-2xl font-semibold tabular-nums ${toneMap[tone]}`}>{value}</div>
-      {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
+      <div className="mt-2 text-[11px] text-muted-foreground">{hint ?? "vs prev. —"}</div>
     </div>
   );
 }
