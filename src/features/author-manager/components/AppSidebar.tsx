@@ -132,16 +132,21 @@ export function AppSidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMo
       {!collapsed && (
         <div className="shrink-0 px-3 pt-3">
           <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-2.5 py-1.5">
-            <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <label htmlFor="sidebar-module-search" className="sr-only">
+              Find a module
+            </label>
             <input
+              id="sidebar-module-search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Find a module…"
+              placeholder="Find a module…  (/)"
               className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground"
             />
           </div>
         </div>
       )}
+
 
       <nav className="scrollbar-thin flex-1 space-y-3 overflow-y-auto px-2 py-3">
         <div className="space-y-0.5">
