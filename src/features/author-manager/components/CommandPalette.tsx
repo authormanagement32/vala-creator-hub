@@ -16,10 +16,17 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette"
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-lg overflow-hidden rounded-lg border border-hairline bg-surface shadow-xl"
       >
+        <label htmlFor="command-palette-input" className="sr-only">
+          Jump to wall, action, or author
+        </label>
         <input
+          id="command-palette-input"
           autoFocus
           value={q}
           onChange={(e) => setQ(e.target.value)}
