@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { Bell, ChevronDown, Command, Crown, LifeBuoy, Menu, Search, Settings } from "lucide-react";
 import { NotificationCenter } from "./NotificationCenter";
+import { GlobalSearch } from "./GlobalSearch";
+
 
 interface Props {
   onSearch: (q: string) => void;
@@ -27,34 +29,8 @@ export function TopBar({ onSearch, search, onOpenPalette, onOpenMenu }: Props) {
           </span>
         </Link>
 
-        <form
-          role="search"
-          onSubmit={(e) => {
-            e.preventDefault();
-            onOpenPalette();
-          }}
-          className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-surface pl-3 pr-1 py-1 md:max-w-72 2xl:max-w-96"
-        >
-          <label htmlFor="global-search" className="sr-only">
-            Search authors, products, licenses
-          </label>
-          <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-          <input
-            id="global-search"
-            type="search"
-            value={search}
-            onChange={(e) => onSearch(e.target.value)}
-            placeholder="Search authors, products…"
-            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-          />
-          <button
-            type="submit"
-            className="grid h-9 min-h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 text-primary transition-colors hover:bg-primary/25"
-            aria-label="Search"
-          >
-            <Search className="h-4 w-4" />
-          </button>
-        </form>
+        <GlobalSearch search={search} onSearch={onSearch} onOpenPalette={onOpenPalette} />
+
 
         <button
           type="button"
