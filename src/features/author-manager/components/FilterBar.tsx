@@ -49,6 +49,17 @@ export function FilterBar({
 
   const clearAll = () => {
     appliedChips.forEach((c) => c.onClear());
+    requestAnimationFrame(() => searchRef.current?.focus());
+  };
+
+  /** Keep focus inside the chip row after a chip is removed. */
+  const focusAfterRemoval = (index: number) => {
+    requestAnimationFrame(() => {
+      const chips = chipRowRef.current?.querySelectorAll<HTMLElement>('[data-filter-chip="true"]');
+      const next = chips?.[Math.min(index, (chips?.length ?? 1) - 1)];
+      if (next) next.focus();
+      else (clearAllRef.current ?? searchRef.current)?.focus();
+    });
   };
 
   return (
@@ -57,13 +68,22 @@ export function FilterBar({
         <div className="relative flex-1 min-w-[220px]">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <input
+            ref={searchRef}
             value={search}
             onChange={(e) => onSearch(e.target.value)}
+            onKeyDown={(e) => {
+              // Backspace in an empty search box removes the last applied filter.
+              if (e.key === "Backspace" && search === "" && appliedChips.length > 0) {
+                e.preventDefault();
+                appliedChips[appliedChips.length - 1]!.onClear();
+              }
+            }}
             placeholder="Search…"
             aria-label="Search this list"
             className="h-9 w-full rounded-md border border-hairline bg-surface-2 pl-8 pr-3 text-sm outline-none focus:border-brand"
           />
         </div>
+
         {statusOptions && (
           <select
             value={status ?? ""}
