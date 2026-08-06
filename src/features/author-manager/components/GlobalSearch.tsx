@@ -48,7 +48,7 @@ export function GlobalSearch({ search, onSearch, onOpenPalette }: Props) {
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
 
-  const { data, isFetching } = useQuery({
+  const { data, isFetching, isPending, isError, error, refetch } = useQuery({
     queryKey: ["author-manager", "global-search", debounced],
     enabled: hasSession === true && debounced.length >= 2,
     staleTime: 15_000,
