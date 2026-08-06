@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { Bell, ChevronDown, Command, Crown, LifeBuoy, Menu, Search, Settings } from "lucide-react";
 import { NotificationCenter } from "./NotificationCenter";
+import { GlobalSearch } from "./GlobalSearch";
+
 
 interface Props {
   onSearch: (q: string) => void;
