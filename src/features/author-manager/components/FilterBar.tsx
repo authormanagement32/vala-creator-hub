@@ -1,5 +1,5 @@
 import { Filter, Plus, Search, SlidersHorizontal, Upload, X } from "lucide-react";
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 
 export interface FilterChip {
   key: string;
@@ -31,6 +31,10 @@ export function FilterBar({
   extras,
   chips = [],
 }: Props) {
+  const searchRef = useRef<HTMLInputElement>(null);
+  const chipRowRef = useRef<HTMLDivElement>(null);
+  const clearAllRef = useRef<HTMLButtonElement>(null);
+
   const appliedChips: FilterChip[] = [
     ...(search.trim()
       ? [{ key: "search", label: `Search: “${search.trim()}”`, onClear: () => onSearch("") }]
@@ -121,6 +125,7 @@ export function FilterBar({
 
       {appliedChips.length > 0 && (
         <div
+          ref={chipRowRef}
           role="group"
           aria-label="Applied filters"
           className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-hairline pt-2"
@@ -131,6 +136,7 @@ export function FilterBar({
           {appliedChips.map((chip, i) => (
             <span
               key={chip.key}
+              data-filter-chip="true"
               tabIndex={0}
               role="button"
               aria-label={`${chip.label}. Press Enter or Backspace to remove this filter`}
