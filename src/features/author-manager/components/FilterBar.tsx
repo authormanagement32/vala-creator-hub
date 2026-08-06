@@ -100,33 +100,49 @@ export function FilterBar({
       </div>
 
       {appliedChips.length > 0 && (
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-hairline pt-2">
+        <div
+          role="group"
+          aria-label="Applied filters"
+          className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-hairline pt-2"
+        >
           <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             Filters
           </span>
-          {appliedChips.map((chip) => (
+          {appliedChips.map((chip, i) => (
             <span
               key={chip.key}
-              className="inline-flex items-center gap-1 rounded-full border border-hairline bg-surface-2 py-0.5 pl-2 pr-1 text-xs"
+              tabIndex={0}
+              role="button"
+              aria-label={`${chip.label}. Press Enter or Backspace to remove this filter`}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " " || e.key === "Backspace" || e.key === "Delete") {
+                  e.preventDefault();
+                  focusAfterRemoval(i);
+                  chip.onClear();
+                }
+              }}
+              onClick={() => chip.onClear()}
+              className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-hairline bg-surface-2 py-0.5 pl-2 pr-1 text-xs outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-card"
             >
               {chip.label}
-              <button
-                onClick={chip.onClear}
-                aria-label={`Clear filter ${chip.label}`}
-                className="grid h-5 w-5 place-items-center rounded-full text-muted-foreground hover:bg-card hover:text-foreground"
+              <span
+                aria-hidden="true"
+                className="grid h-5 w-5 place-items-center rounded-full text-muted-foreground"
               >
                 <X className="h-3 w-3" />
-              </button>
+              </span>
             </span>
           ))}
           <button
+            ref={clearAllRef}
             onClick={clearAll}
-            className="ml-1 rounded-md px-2 py-0.5 text-xs font-medium text-brand hover:bg-surface-2"
+            className="ml-1 rounded-md px-2 py-0.5 text-xs font-medium text-brand outline-none hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-card"
           >
             Clear all
           </button>
         </div>
       )}
+
     </div>
   );
 }
