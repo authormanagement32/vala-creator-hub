@@ -956,3 +956,34 @@ export const getDashboardStats = createServerFn({ method: "GET" }).handler(async
     return { authed: true, ...empty };
   }
 });
+
+// ---- Global search (top-bar live suggestions) ----
+export const globalSearch = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ q: z.string().trim().min(1).max(120) }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureBoss(context);
+    const like = `%${data.q}%`;
+    const [authors, products, repos] = await Promise.all([
+      context.supabase
+        .from("authors")
+        .select("id,name,email,status")
+        .or(`name.ilike.${like},email.ilike.${like},company.ilike.${like}`)
+        .limit(5),
+      context.supabase
+        .from("products")
+        .select("id,name,status,category")
+        .ilike("name", like)
+        .limit(5),
+      context.supabase
+        .from("source_repos")
+        .select("id,name,provider")
+        .ilike("name", like)
+        .limit(5),
+    ]);
+    return {
+      authors: (authors.data ?? []) as { id: string; name: string; email: string; status: string }[],
+      products: (products.data ?? []) as { id: string; name: string; status: string; category: string | null }[],
+      repos: (repos.data ?? []) as { id: string; name: string; provider: string }[],
+    };
+  });
