@@ -91,7 +91,7 @@ export function GlobalSearch({ search, onSearch, onOpenPalette }: Props) {
   const query = search.trim();
   const showPanel = open && query.length > 0;
   const tooShort = query.length < 2;
-  const loading = !tooShort && (isPending || (isFetching && !data));
+  const loading = !tooShort && hasSession !== false && (isPending || (isFetching && !data));
   const empty = !tooShort && !loading && !isError && suggestions.length === 0;
 
   const statusMessage = tooShort
