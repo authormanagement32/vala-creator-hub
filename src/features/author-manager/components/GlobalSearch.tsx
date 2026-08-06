@@ -88,7 +88,21 @@ export function GlobalSearch({ search, onSearch, onOpenPalette }: Props) {
 
   useEffect(() => setActive(0), [suggestions.length]);
 
-  const showPanel = open && debounced.length >= 2;
+  const query = search.trim();
+  const showPanel = open && query.length > 0;
+  const tooShort = query.length < 2;
+  const loading = !tooShort && (isPending || (isFetching && !data));
+  const empty = !tooShort && !loading && !isError && suggestions.length === 0;
+
+  const statusMessage = tooShort
+    ? "Type at least 2 characters to search"
+    : loading
+      ? "Searching…"
+      : isError
+        ? "Search failed"
+        : empty
+          ? "No matches found"
+          : `${suggestions.length} result${suggestions.length === 1 ? "" : "s"} available`;
 
   const choose = (s: Suggestion | undefined) => {
     if (!s) {
