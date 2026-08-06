@@ -48,7 +48,7 @@ export function GlobalSearch({ search, onSearch, onOpenPalette }: Props) {
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
 
-  const { data, isFetching } = useQuery({
+  const { data, isFetching, isPending, isError, error, refetch } = useQuery({
     queryKey: ["author-manager", "global-search", debounced],
     enabled: hasSession === true && debounced.length >= 2,
     staleTime: 15_000,
@@ -88,7 +88,21 @@ export function GlobalSearch({ search, onSearch, onOpenPalette }: Props) {
 
   useEffect(() => setActive(0), [suggestions.length]);
 
-  const showPanel = open && debounced.length >= 2;
+  const query = search.trim();
+  const showPanel = open && query.length > 0;
+  const tooShort = query.length < 2;
+  const loading = !tooShort && hasSession !== false && (isPending || (isFetching && !data));
+  const empty = !tooShort && !loading && !isError && suggestions.length === 0;
+
+  const statusMessage = tooShort
+    ? "Type at least 2 characters to search"
+    : loading
+      ? "Searching…"
+      : isError
+        ? "Search failed"
+        : empty
+          ? "No matches found"
+          : `${suggestions.length} result${suggestions.length === 1 ? "" : "s"} available`;
 
   const choose = (s: Suggestion | undefined) => {
     if (!s) {
@@ -173,12 +187,46 @@ export function GlobalSearch({ search, onSearch, onOpenPalette }: Props) {
                 </span>
               </li>
             ))}
-            {suggestions.length === 0 && (
+            {tooShort && (
               <li className="px-3 py-3 text-center text-sm text-muted-foreground" role="presentation">
-                {isFetching ? "Searching…" : "No matches"}
+                Keep typing — at least 2 characters.
+              </li>
+            )}
+            {loading && (
+              <li className="space-y-2 px-3 py-3" role="presentation" aria-hidden="true">
+                {[0, 1, 2].map((i) => (
+                  <span key={i} className="flex items-center justify-between gap-2">
+                    <span className="h-3 w-1/2 animate-pulse rounded bg-muted-foreground/20" />
+                    <span className="h-3 w-16 animate-pulse rounded bg-muted-foreground/10" />
+                  </span>
+                ))}
+              </li>
+            )}
+            {isError && (
+              <li className="px-3 py-3 text-center text-sm" role="presentation">
+                <span className="block text-destructive">
+                  {error instanceof Error && /unauthorized|forbidden/i.test(error.message)
+                    ? "You don’t have access to search right now."
+                    : "Search failed. Please try again."}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void refetch()}
+                  className="mt-2 rounded-md border border-border px-2 py-1 text-xs hover:bg-surface-2"
+                >
+                  Retry
+                </button>
+              </li>
+            )}
+            {empty && (
+              <li className="px-3 py-3 text-center text-sm text-muted-foreground" role="presentation">
+                No matches for “{query}”.
               </li>
             )}
           </ul>
+          <p aria-live="polite" aria-atomic="true" className="sr-only">
+            {statusMessage}
+          </p>
           <button
             type="button"
             onClick={() => {

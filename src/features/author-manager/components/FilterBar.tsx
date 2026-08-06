@@ -1,5 +1,5 @@
 import { Filter, Plus, Search, SlidersHorizontal, Upload, X } from "lucide-react";
-import { useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 export interface FilterChip {
   key: string;
@@ -34,6 +34,12 @@ export function FilterBar({
   const searchRef = useRef<HTMLInputElement>(null);
   const chipRowRef = useRef<HTMLDivElement>(null);
   const clearAllRef = useRef<HTMLButtonElement>(null);
+  const [announcement, setAnnouncement] = useState("");
+  const prevChipsRef = useRef<string[] | null>(null);
+
+  /** Announce a message, forcing a re-read when the same text repeats. */
+  const announce = (msg: string) => setAnnouncement((prev) => (prev === msg ? `${msg} ` : msg));
+
 
   const appliedChips: FilterChip[] = [
     ...(search.trim()
@@ -52,7 +58,13 @@ export function FilterBar({
   ];
 
   const clearAll = () => {
+    const count = appliedChips.length;
     appliedChips.forEach((c) => c.onClear());
+    announce(
+      count === 0
+        ? "No filters to clear"
+        : `All ${count} filter${count === 1 ? "" : "s"} cleared. Focus moved to search.`,
+    );
     requestAnimationFrame(() => searchRef.current?.focus());
   };
 
@@ -66,8 +78,32 @@ export function FilterBar({
     });
   };
 
+  // Announce chips that appear (e.g. typing in search, changing status).
+  const chipKeys = appliedChips.map((c) => `${c.key}:${c.label}`);
+  const chipSignature = chipKeys.join("|");
+  useEffect(() => {
+    const prev = prevChipsRef.current;
+    prevChipsRef.current = chipKeys;
+    if (prev === null) return;
+    const added = chipKeys.filter((k) => !prev.includes(k));
+    const removed = prev.filter((k) => !chipKeys.includes(k));
+    if (added.length === 1 && removed.length === 0) {
+      announce(`Filter added: ${added[0]!.split(":").slice(1).join(":")}. ${chipKeys.length} active.`);
+    } else if (removed.length === 1 && added.length === 0) {
+      announce(
+        `Filter removed: ${removed[0]!.split(":").slice(1).join(":")}. ${
+          chipKeys.length === 0 ? "No filters active." : `${chipKeys.length} active.`
+        }`,
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chipSignature]);
+
   return (
     <div className="mb-3 rounded-lg border border-hairline bg-card p-2">
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {announcement}
+      </div>
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[220px]">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
