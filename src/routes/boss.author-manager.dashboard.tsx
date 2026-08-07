@@ -86,8 +86,9 @@ function DashboardWall() {
         <KpiCard label="Suspended" value={fmtNumber(s?.suspendedAuthors)} icon={Ban} tone="danger" />
         <KpiCard label="Published products" value={fmtNumber(s?.publishedProducts)} icon={Package} />
         <KpiCard label="Pending reviews" value={fmtNumber(s?.pendingReviews)} icon={Star} tone="warning" />
-        <KpiCard label="Revenue" value={fmtMoney(s?.revenue)} icon={TrendingUp} tone="success" />
-        <KpiCard label="Royalties" value={fmtMoney(s?.royalties)} icon={Wallet} />
+        <KpiCard label="Revenue" value={fmtMoney(s?.revenue, "USD", { compact: true })} icon={TrendingUp} tone="success" />
+        <KpiCard label="Royalties" value={fmtMoney(s?.royalties, "USD", { compact: true })} icon={Wallet} />
+
         <KpiCard label="Downloads" value={fmtNumber(s?.downloads)} icon={Download} />
         <KpiCard label="Active licenses" value={fmtNumber(s?.activeLicenses)} icon={KeyRound} />
         <KpiCard label="Support tickets" value={fmtNumber(s?.supportTickets)} icon={LifeBuoy} tone="info" />
