@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import type { MouseEvent } from "react";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -51,7 +52,15 @@ const columns: Column<AuthorRow>[] = [
           {r.name.slice(0, 1).toUpperCase()}
         </div>
         <div>
-          <div className="font-medium">{r.name}</div>
+          <Link
+            to="/boss/author-manager/author/$authorId"
+            params={{ authorId: r.id }}
+            preload="intent"
+            className="font-medium hover:underline"
+            onClick={(e: MouseEvent) => e.stopPropagation()}
+          >
+            {r.name}
+          </Link>
           <div className="text-[11px] text-muted-foreground">{r.email}</div>
         </div>
       </div>
@@ -169,7 +178,7 @@ function AuthorsWall() {
             <input
               type="checkbox"
               checked={selectedIds.has(r.id)}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: MouseEvent) => e.stopPropagation()}
               onChange={(e) => {
                 const next = new Set(selectedIds);
                 if (e.currentTarget.checked) next.add(r.id); else next.delete(r.id);
