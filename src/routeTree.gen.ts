@@ -36,6 +36,7 @@ import { Route as BossAuthorManagerApplicationsRouteImport } from './routes/boss
 import { Route as BossAuthorManagerAnalyticsRouteImport } from './routes/boss.author-manager.analytics'
 import { Route as BossAuthorManagerAiModelsRouteImport } from './routes/boss.author-manager.ai-models'
 import { Route as ApiPublicAuthGateEventsRouteImport } from './routes/api/public/auth-gate-events'
+import { Route as BossAuthorManagerAuthorAuthorIdRouteImport } from './routes/boss.author-manager.author.$authorId'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -193,6 +194,12 @@ const ApiPublicAuthGateEventsRoute = ApiPublicAuthGateEventsRouteImport.update({
   path: '/api/public/auth-gate-events',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BossAuthorManagerAuthorAuthorIdRoute =
+  BossAuthorManagerAuthorAuthorIdRouteImport.update({
+    id: '/author/$authorId',
+    path: '/author/$authorId',
+    getParentRoute: () => BossAuthorManagerRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -222,6 +229,7 @@ export interface FileRoutesByFullPath {
   '/boss/author-manager/themes': typeof BossAuthorManagerThemesRoute
   '/boss/author-manager/versions': typeof BossAuthorManagerVersionsRoute
   '/boss/author-manager/': typeof BossAuthorManagerIndexRoute
+  '/boss/author-manager/author/$authorId': typeof BossAuthorManagerAuthorAuthorIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -250,6 +258,7 @@ export interface FileRoutesByTo {
   '/boss/author-manager/themes': typeof BossAuthorManagerThemesRoute
   '/boss/author-manager/versions': typeof BossAuthorManagerVersionsRoute
   '/boss/author-manager': typeof BossAuthorManagerIndexRoute
+  '/boss/author-manager/author/$authorId': typeof BossAuthorManagerAuthorAuthorIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -280,6 +289,7 @@ export interface FileRoutesById {
   '/boss/author-manager/themes': typeof BossAuthorManagerThemesRoute
   '/boss/author-manager/versions': typeof BossAuthorManagerVersionsRoute
   '/boss/author-manager/': typeof BossAuthorManagerIndexRoute
+  '/boss/author-manager/author/$authorId': typeof BossAuthorManagerAuthorAuthorIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -311,6 +321,7 @@ export interface FileRouteTypes {
     | '/boss/author-manager/themes'
     | '/boss/author-manager/versions'
     | '/boss/author-manager/'
+    | '/boss/author-manager/author/$authorId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -339,6 +350,7 @@ export interface FileRouteTypes {
     | '/boss/author-manager/themes'
     | '/boss/author-manager/versions'
     | '/boss/author-manager'
+    | '/boss/author-manager/author/$authorId'
   id:
     | '__root__'
     | '/'
@@ -368,6 +380,7 @@ export interface FileRouteTypes {
     | '/boss/author-manager/themes'
     | '/boss/author-manager/versions'
     | '/boss/author-manager/'
+    | '/boss/author-manager/author/$authorId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -568,6 +581,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAuthGateEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/boss/author-manager/author/$authorId': {
+      id: '/boss/author-manager/author/$authorId'
+      path: '/author/$authorId'
+      fullPath: '/boss/author-manager/author/$authorId'
+      preLoaderRoute: typeof BossAuthorManagerAuthorAuthorIdRouteImport
+      parentRoute: typeof BossAuthorManagerRoute
+    }
   }
 }
 
@@ -595,6 +615,7 @@ interface BossAuthorManagerRouteChildren {
   BossAuthorManagerThemesRoute: typeof BossAuthorManagerThemesRoute
   BossAuthorManagerVersionsRoute: typeof BossAuthorManagerVersionsRoute
   BossAuthorManagerIndexRoute: typeof BossAuthorManagerIndexRoute
+  BossAuthorManagerAuthorAuthorIdRoute: typeof BossAuthorManagerAuthorAuthorIdRoute
 }
 
 const BossAuthorManagerRouteChildren: BossAuthorManagerRouteChildren = {
@@ -621,6 +642,7 @@ const BossAuthorManagerRouteChildren: BossAuthorManagerRouteChildren = {
   BossAuthorManagerThemesRoute: BossAuthorManagerThemesRoute,
   BossAuthorManagerVersionsRoute: BossAuthorManagerVersionsRoute,
   BossAuthorManagerIndexRoute: BossAuthorManagerIndexRoute,
+  BossAuthorManagerAuthorAuthorIdRoute: BossAuthorManagerAuthorAuthorIdRoute,
 }
 
 const BossAuthorManagerRouteWithChildren =
