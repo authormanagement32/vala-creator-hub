@@ -11,7 +11,7 @@ import { StatusBadge } from "@/features/author-manager/components/StatusBadge";
 import { RightActionPanel } from "@/features/author-manager/components/RightActionPanel";
 import { AuditTimeline } from "@/features/author-manager/components/AuditTimeline";
 import { deriveState } from "@/features/author-manager/data";
-import { fmtDate } from "@/features/author-manager/format";
+import { fmtDate, fmtDateTime } from "@/features/author-manager/format";
 import { useHasSession } from "@/hooks/use-has-session";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
