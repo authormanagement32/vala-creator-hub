@@ -57,7 +57,7 @@ const columns: Column<AuthorRow>[] = [
             params={{ authorId: r.id }}
             preload="intent"
             className="font-medium hover:underline"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e: MouseEvent) => e.stopPropagation()}
           >
             {r.name}
           </Link>
@@ -178,7 +178,7 @@ function AuthorsWall() {
             <input
               type="checkbox"
               checked={selectedIds.has(r.id)}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: MouseEvent) => e.stopPropagation()}
               onChange={(e) => {
                 const next = new Set(selectedIds);
                 if (e.currentTarget.checked) next.add(r.id); else next.delete(r.id);
