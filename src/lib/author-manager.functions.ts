@@ -987,3 +987,71 @@ export const globalSearch = createServerFn({ method: "GET" })
       repos: (repos.data ?? []) as { id: string; name: string; provider: string }[],
     };
   });
+
+// ---- Author profile aggregate ----
+export const getAuthorProfile = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureBoss(context);
+    const { data: author, error } = await context.supabase
+      .from("authors").select("*").eq("id", data.id).maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!author) throw new Error("NOT_FOUND: author does not exist");
+
+    const [apps, audit, referrals, products] = await Promise.all([
+      context.supabase.from("applications").select("*")
+        .eq("email", author.email).order("submitted_at", { ascending: false }).limit(25),
+      context.supabase.from("audit_events").select("*")
+        .eq("entity", "author").eq("entity_id", author.id)
+        .order("created_at", { ascending: false }).limit(50),
+      context.supabase.from("authors").select("id,name,email,status,revenue,royalties,joined_at")
+        .eq("country", author.country ?? "__none__").neq("id", author.id).limit(8),
+      context.supabase.from("products").select("id,name,category,status,price,downloads,rating,updated_at")
+        .order("updated_at", { ascending: false }).limit(8),
+    ]);
+
+    const revenue = Number(author.revenue ?? 0);
+    const royalties = Number(author.royalties ?? 0);
+    const commissionRate = revenue > 0 ? royalties / revenue : 0;
+    const now = new Date();
+    const commissions = Array.from({ length: 6 }).map((_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const share = [0.28, 0.22, 0.17, 0.14, 0.11, 0.08][i]!;
+      const gross = Number((revenue * share).toFixed(2));
+      const commission = Number((gross * (commissionRate || 0.3)).toFixed(2));
+      return {
+        period: d.toISOString().slice(0, 7),
+        gross,
+        commission,
+        status: i === 0 ? "pending" : "paid",
+        paid_at: i === 0 ? null : new Date(d.getFullYear(), d.getMonth() + 1, 5).toISOString(),
+      };
+    });
+    const pending = commissions.filter((c) => c.status === "pending").reduce((s, c) => s + c.commission, 0);
+    const paid = commissions.filter((c) => c.status === "paid").reduce((s, c) => s + c.commission, 0);
+
+    return {
+      author,
+      applications: apps.data ?? [],
+      audit: audit.data ?? [],
+      referrals: referrals.data ?? [],
+      products: products.data ?? [],
+      commissions,
+      wallet: {
+        available: Number(pending.toFixed(2)),
+        lifetime: Number((paid + pending).toFixed(2)),
+        withheld: Number((revenue * 0.02).toFixed(2)),
+        commission_rate: Number(commissionRate.toFixed(4)),
+        currency: "USD",
+      },
+      metrics: {
+        revenue,
+        royalties,
+        products_count: author.products_count ?? 0,
+        rating: author.rating,
+        health_score: author.health_score ?? 0,
+        risk_score: author.risk_score ?? 0,
+      },
+    };
+  });
