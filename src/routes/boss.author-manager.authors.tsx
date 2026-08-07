@@ -44,7 +44,7 @@ const AuthorFormSchema = z.object({
 
 const columns: Column<AuthorRow>[] = [
   {
-    id: "name", header: "Author", width: "1.5",
+    id: "name", header: "Author", width: "1.5", sortValue: (r) => r.name,
     cell: (r) => (
       <div className="flex items-center gap-2">
         <div className="grid h-6 w-6 place-items-center rounded-full bg-brand/15 text-[10px] font-semibold text-brand">
@@ -57,15 +57,16 @@ const columns: Column<AuthorRow>[] = [
       </div>
     ),
   },
-  { id: "company", header: "Company", cell: (r) => r.company ?? "—" },
-  { id: "country", header: "Country", cell: (r) => r.country ?? "—", width: "0.6" },
-  { id: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} />, width: "0.6" },
-  { id: "products", header: "Products", cell: (r) => fmtNumber(r.products_count), width: "0.5", align: "right" },
-  { id: "revenue", header: "Revenue", cell: (r) => fmtMoney(Number(r.revenue)), width: "0.7", align: "right" },
-  { id: "royalties", header: "Royalties", cell: (r) => fmtMoney(Number(r.royalties)), width: "0.7", align: "right" },
-  { id: "health", header: "Health", cell: (r) => fmtNumber(r.health_score), width: "0.4", align: "right" },
-  { id: "risk", header: "Risk", cell: (r) => fmtNumber(r.risk_score), width: "0.4", align: "right" },
+  { id: "company", header: "Company", cell: (r) => r.company ?? "—", sortValue: (r) => r.company },
+  { id: "country", header: "Country", cell: (r) => r.country ?? "—", width: "0.6", sortValue: (r) => r.country },
+  { id: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} />, width: "0.6", sortValue: (r) => r.status },
+  { id: "products", header: "Products", cell: (r) => fmtNumber(r.products_count), width: "0.5", align: "right", sortValue: (r) => r.products_count },
+  { id: "revenue", header: "Revenue", cell: (r) => fmtMoney(Number(r.revenue)), width: "0.7", align: "right", sortValue: (r) => Number(r.revenue) },
+  { id: "royalties", header: "Royalties", cell: (r) => fmtMoney(Number(r.royalties)), width: "0.7", align: "right", sortValue: (r) => Number(r.royalties) },
+  { id: "health", header: "Health", cell: (r) => fmtNumber(r.health_score), width: "0.4", align: "right", sortValue: (r) => r.health_score },
+  { id: "risk", header: "Risk", cell: (r) => fmtNumber(r.risk_score), width: "0.4", align: "right", sortValue: (r) => r.risk_score },
 ];
+
 
 function AuthorsWall() {
   const hasSession = useHasSession();
