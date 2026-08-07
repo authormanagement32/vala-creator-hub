@@ -11,7 +11,7 @@ import { StatusBadge } from "@/features/author-manager/components/StatusBadge";
 import { RightActionPanel } from "@/features/author-manager/components/RightActionPanel";
 import { AuditTimeline } from "@/features/author-manager/components/AuditTimeline";
 import { deriveState } from "@/features/author-manager/data";
-import { fmtDate } from "@/features/author-manager/format";
+import { fmtDate, fmtDateTime } from "@/features/author-manager/format";
 import { useHasSession } from "@/hooks/use-has-session";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -46,12 +46,20 @@ const InviteSchema = z.object({
 });
 
 const columns: Column<AppRow>[] = [
-  { id: "name", header: "Applicant", cell: (r) => <span className="font-medium">{r.applicant_name}</span> },
-  { id: "email", header: "Email", cell: (r) => <span className="text-muted-foreground">{r.email}</span> },
-  { id: "country", header: "Country", cell: (r) => r.country ?? "—", width: "0.6" },
-  { id: "stage", header: "Stage", cell: (r) => <StatusBadge status={r.stage} />, width: "0.7" },
-  { id: "submitted", header: "Submitted", cell: (r) => fmtDate(r.submitted_at), width: "0.7" },
-  { id: "reviewer", header: "Reviewer", cell: (r) => r.reviewer_email ?? "—", width: "0.9" },
+  { id: "name", header: "Applicant", cell: (r) => <span className="font-medium">{r.applicant_name}</span>, sortValue: (r) => r.applicant_name },
+  { id: "email", header: "Email", cell: (r) => <span className="text-muted-foreground">{r.email}</span>, sortValue: (r) => r.email },
+  { id: "country", header: "Country", cell: (r) => r.country ?? "—", width: "0.6", sortValue: (r) => r.country },
+  { id: "stage", header: "Stage", cell: (r) => <StatusBadge status={r.stage} />, width: "0.7", sortValue: (r) => r.stage },
+  {
+    id: "submitted", header: "Submitted", width: "0.9", sortValue: (r) => r.submitted_at,
+    cell: (r) => (
+      <time dateTime={r.submitted_at} title={fmtDateTime(r.submitted_at)}>
+        {fmtDateTime(r.submitted_at)}
+      </time>
+    ),
+  },
+  { id: "reviewer", header: "Reviewer", cell: (r) => r.reviewer_email ?? "—", width: "0.9", sortValue: (r) => r.reviewer_email },
+
 ];
 
 function ApplicationsWall() {
