@@ -51,7 +51,15 @@ const columns: Column<AuthorRow>[] = [
           {r.name.slice(0, 1).toUpperCase()}
         </div>
         <div>
-          <div className="font-medium">{r.name}</div>
+          <Link
+            to="/boss/author-manager/author/$authorId"
+            params={{ authorId: r.id }}
+            preload="intent"
+            className="font-medium hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {r.name}
+          </Link>
           <div className="text-[11px] text-muted-foreground">{r.email}</div>
         </div>
       </div>
