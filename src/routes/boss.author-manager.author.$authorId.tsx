@@ -463,6 +463,7 @@ function AuthorProfilePage() {
           <Button asChild variant="outline" size="sm">
             <Link to="/boss/author-manager/authors"><ArrowLeft className="mr-1 h-3.5 w-3.5" /> Directory</Link>
           </Button>
+          <AuthorStatusActions author={author} onDone={refresh} />
           <StatusBadge status={author.status} />
         </>
       }
@@ -474,7 +475,8 @@ function AuthorProfilePage() {
         <KpiCard label="Risk" value={fmtNumber(metrics.risk_score)} icon={ShieldAlert} tone="danger" hint="Lower is better" />
       </div>
 
-      <Tabs defaultValue="overview" className="mt-6">
+      <Tabs value={tab} onValueChange={setTab} className="mt-6">
+
         <TabsList className="flex h-auto flex-wrap justify-start gap-1">
           {SECTIONS.map((s) => (
             <TabsTrigger key={s.id} value={s.id} className="text-xs">{s.label}</TabsTrigger>
