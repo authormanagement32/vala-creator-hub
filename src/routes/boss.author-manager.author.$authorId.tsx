@@ -504,17 +504,9 @@ function AuthorProfilePage() {
         </TabsContent>
 
         <TabsContent value="personal" className="mt-4">
-          <Panel title="Personal information" subtitle="Contact and identity fields on record">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <Field label="Full name" value={author.name} />
-              <Field label="Email" value={author.email} />
-              <Field label="Company" value={author.company} />
-              <Field label="Country" value={author.country} />
-              <Field label="Author ID" value={<span className="font-mono text-[11px]">{author.id}</span>} />
-              <Field label="Last updated" value={<time dateTime={isoAttr(author.updated_at)}>{fmtDateTime(author.updated_at)}</time>} />
-            </div>
-          </Panel>
+          <PersonalInfoTab author={author} onSaved={refresh} />
         </TabsContent>
+
 
         <TabsContent value="referrals" className="mt-4">
           <Panel title="Referral network" subtitle="Related authors in the same region" icon={Network}>
