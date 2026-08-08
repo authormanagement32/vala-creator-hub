@@ -415,6 +415,14 @@ function AuthorProfilePage() {
   const { authorId } = Route.useParams();
   const hasSession = useHasSession();
   const fetchProfile = useServerFn(getAuthorProfile);
+  const queryClient = useQueryClient();
+  const [tab, setTab] = useState<string>("overview");
+
+  async function refresh() {
+    await queryClient.invalidateQueries({ queryKey: ["author-profile", authorId] });
+  }
+
+
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["author-profile", authorId],
