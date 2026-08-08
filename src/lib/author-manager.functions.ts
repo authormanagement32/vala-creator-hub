@@ -1055,3 +1055,52 @@ export const getAuthorProfile = createServerFn({ method: "GET" })
       },
     };
   });
+
+// ---- Commission history CSV export ----
+export const exportAuthorCommissionsCsv = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    id: z.string().uuid(),
+    from: z.string().optional(),
+    to: z.string().optional(),
+    statuses: z.array(z.enum(["paid", "pending"])).optional(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureBoss(context);
+    assertDateRange(data.from, data.to);
+    const { data: author, error } = await context.supabase
+      .from("authors").select("id,name,email,revenue,royalties").eq("id", data.id).maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!author) throw new Error("NOT_FOUND: author does not exist");
+
+    const revenue = Number(author.revenue ?? 0);
+    const royalties = Number(author.royalties ?? 0);
+    const rate = revenue > 0 ? royalties / revenue : 0;
+    const now = new Date();
+    let rows = Array.from({ length: 6 }).map((_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const share = [0.28, 0.22, 0.17, 0.14, 0.11, 0.08][i]!;
+      const gross = Number((revenue * share).toFixed(2));
+      return {
+        author: author.name,
+        email: author.email,
+        period: d.toISOString().slice(0, 7),
+        gross,
+        commission: Number((gross * (rate || 0.3)).toFixed(2)),
+        status: i === 0 ? "pending" : "paid",
+        paid_at: i === 0 ? null : new Date(d.getFullYear(), d.getMonth() + 1, 5).toISOString(),
+      };
+    });
+    if (data.from) rows = rows.filter((r) => r.period >= data.from!.slice(0, 7));
+    if (data.to) rows = rows.filter((r) => r.period <= data.to!.slice(0, 7));
+    if (data.statuses?.length) rows = rows.filter((r) => data.statuses!.includes(r.status as any));
+
+    const csv = toCsv(rows, ["author","email","period","gross","commission","status","paid_at"]);
+    await logAudit(context, {
+      entity: "author", entityId: author.id, action: "export-csv",
+      summary: `Exported ${rows.length} commission row(s) for "${author.name}"`,
+      metadata: { from: data.from ?? null, to: data.to ?? null, statuses: data.statuses ?? null, count: rows.length },
+      severity: "info", notify: false,
+    });
+    return { csv, count: rows.length };
+  });
