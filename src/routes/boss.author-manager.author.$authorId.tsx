@@ -1,9 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { z } from "zod";
 import {
-  Activity, ArrowLeft, BadgeCheck, Coins, FileText, Gauge, Megaphone,
-  Network, NotebookPen, ShieldAlert, Star, Wallet,
+  Activity, ArrowLeft, BadgeCheck, Coins, Download, FileText, Gauge, Megaphone,
+  Network, NotebookPen, Pencil, ShieldAlert, Star, Wallet,
 } from "lucide-react";
 import { WallShell } from "@/features/author-manager/components/WallShell";
 import { KpiCard } from "@/features/author-manager/components/KpiCard";
@@ -14,7 +17,15 @@ import { fmtMoney, fmtNumber, fmtDate, fmtDateTime, fmtPercent, isoAttr } from "
 import { useHasSession } from "@/hooks/use-has-session";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { getAuthorProfile } from "@/lib/author-manager.functions";
+import { Input } from "@/components/ui/input";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  getAuthorProfile, setAuthorVerification, updateAuthor, exportAuthorCommissionsCsv,
+} from "@/lib/author-manager.functions";
+
 
 export const Route = createFileRoute("/boss/author-manager/author/$authorId")({
   head: () => ({
