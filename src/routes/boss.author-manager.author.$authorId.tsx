@@ -85,6 +85,332 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+const PersonalSchema = z.object({
+  name: z.string().trim().min(2, "Name must be at least 2 characters").max(200, "Name is too long"),
+  email: z.string().trim().email("Enter a valid email address").max(255, "Email is too long"),
+  company: z.string().trim().max(200, "Company is too long"),
+  country: z.string().trim().max(80, "Country is too long"),
+});
+type PersonalForm = z.infer<typeof PersonalSchema>;
+
+function PersonalInfoTab({ author, onSaved }: { author: any; onSaved: () => Promise<void> | void }) {
+  const initial: PersonalForm = {
+    name: author.name ?? "",
+    email: author.email ?? "",
+    company: author.company ?? "",
+    country: author.country ?? "",
+  };
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState<PersonalForm>(initial);
+  const [errors, setErrors] = useState<Partial<Record<keyof PersonalForm, string>>>({});
+  const [saving, setSaving] = useState(false);
+  const save = useServerFn(updateAuthor);
+
+  function set<K extends keyof PersonalForm>(key: K, value: string) {
+    setForm((f) => ({ ...f, [key]: value }));
+    setErrors((e) => ({ ...e, [key]: undefined }));
+  }
+
+  function cancel() {
+    setForm(initial);
+    setErrors({});
+    setEditing(false);
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const parsed = PersonalSchema.safeParse(form);
+    if (!parsed.success) {
+      const next: Partial<Record<keyof PersonalForm, string>> = {};
+      for (const issue of parsed.error.issues) next[issue.path[0] as keyof PersonalForm] = issue.message;
+      setErrors(next);
+      toast.error("Please fix the highlighted fields");
+      return;
+    }
+    setSaving(true);
+    try {
+      await save({
+        data: {
+          id: author.id,
+          patch: {
+            name: parsed.data.name,
+            email: parsed.data.email,
+            company: parsed.data.company || null,
+            country: parsed.data.country || null,
+          },
+        },
+      });
+      await onSaved();
+      toast.success("Personal information updated");
+      setEditing(false);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Could not save personal information");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const FIELDS: { key: keyof PersonalForm; label: string; type?: string }[] = [
+    { key: "name", label: "Full name" },
+    { key: "email", label: "Email", type: "email" },
+    { key: "company", label: "Company" },
+    { key: "country", label: "Country" },
+  ];
+
+  return (
+    <Panel
+      title="Personal information"
+      subtitle={editing ? "Edit contact and identity fields, then save" : "Contact and identity fields on record"}
+    >
+      {!editing ? (
+        <>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <Field label="Full name" value={author.name} />
+            <Field label="Email" value={author.email} />
+            <Field label="Company" value={author.company} />
+            <Field label="Country" value={author.country} />
+            <Field label="Author ID" value={<span className="font-mono text-[11px]">{author.id}</span>} />
+            <Field label="Last updated" value={<time dateTime={isoAttr(author.updated_at)}>{fmtDateTime(author.updated_at)}</time>} />
+          </div>
+          <div className="mt-4 flex justify-end">
+            <Button size="sm" variant="outline" data-testid="personal-edit" onClick={() => { setForm(initial); setEditing(true); }}>
+              <Pencil className="mr-1 h-3.5 w-3.5" /> Edit
+            </Button>
+          </div>
+        </>
+      ) : (
+        <form onSubmit={submit} noValidate>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {FIELDS.map((f) => (
+              <label key={f.key} className="block">
+                <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{f.label}</span>
+                <Input
+                  className="mt-1"
+                  type={f.type ?? "text"}
+                  value={form[f.key]}
+                  data-testid={`personal-${f.key}`}
+                  aria-invalid={errors[f.key] ? true : undefined}
+                  aria-describedby={errors[f.key] ? `personal-err-${f.key}` : undefined}
+                  onChange={(e) => set(f.key, e.target.value)}
+                />
+                {errors[f.key] && (
+                  <span id={`personal-err-${f.key}`} role="alert" className="mt-1 block text-[11px] text-danger">
+                    {errors[f.key]}
+                  </span>
+                )}
+              </label>
+            ))}
+          </div>
+          <div className="mt-4 flex justify-end gap-2">
+            <Button type="button" size="sm" variant="outline" onClick={cancel} disabled={saving}>Cancel</Button>
+            <Button type="submit" size="sm" disabled={saving} data-testid="personal-save">
+              {saving ? "Saving…" : "Save changes"}
+            </Button>
+          </div>
+        </form>
+      )}
+    </Panel>
+  );
+}
+
+const COMMISSION_STATUSES = ["paid", "pending"] as const;
+
+function CommissionsTab({ authorId, commissions }: { authorId: string; commissions: any[] }) {
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [statuses, setStatuses] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+  const exportFn = useServerFn(exportAuthorCommissionsCsv);
+
+  const rangeInvalid = !!from && !!to && from > to;
+
+  const rows = useMemo(
+    () =>
+      commissions.filter((c) => {
+        if (from && c.period < from) return false;
+        if (to && c.period > to) return false;
+        if (statuses.length && !statuses.includes(c.status)) return false;
+        return true;
+      }),
+    [commissions, from, to, statuses],
+  );
+
+  function toggleStatus(s: string) {
+    setStatuses((list) => (list.includes(s) ? list.filter((v) => v !== s) : [...list, s]));
+  }
+
+  async function download() {
+    if (rangeInvalid) {
+      toast.error("Invalid date range: 'from' must be on or before 'to'.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const res: any = await exportFn({
+        data: {
+          id: authorId,
+          from: from ? `${from}-01` : undefined,
+          to: to ? `${to}-01` : undefined,
+          statuses: statuses.length ? (statuses as any) : undefined,
+        },
+      });
+      const blob = new Blob([res.csv ?? ""], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `commissions_${authorId.slice(0, 8)}_${from || "start"}_to_${to || "latest"}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      if (res.count) toast.success(`Exported ${res.count} row${res.count === 1 ? "" : "s"}`);
+      else toast.info("No rows for the selected filters — exported headers only.");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Export failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Panel title="Commission history" subtitle="Last 6 periods, derived from recorded revenue and royalties" icon={Coins}>
+      <div className="mb-4 flex flex-wrap items-end gap-3">
+        <label className="block">
+          <span className="text-[11px] uppercase tracking-wider text-muted-foreground">From</span>
+          <Input type="month" value={from} data-testid="commissions-from" className="mt-1 h-9 w-[150px]"
+            aria-invalid={rangeInvalid || undefined} onChange={(e) => setFrom(e.target.value)} />
+        </label>
+        <label className="block">
+          <span className="text-[11px] uppercase tracking-wider text-muted-foreground">To</span>
+          <Input type="month" value={to} data-testid="commissions-to" className="mt-1 h-9 w-[150px]"
+            aria-invalid={rangeInvalid || undefined} onChange={(e) => setTo(e.target.value)} />
+        </label>
+        <div>
+          <div className="mb-1 text-[11px] uppercase tracking-wider text-muted-foreground">Status</div>
+          <div className="flex gap-1">
+            {COMMISSION_STATUSES.map((s) => {
+              const on = statuses.includes(s);
+              return (
+                <button key={s} type="button" onClick={() => toggleStatus(s)}
+                  data-testid={`commissions-status-${s}`} data-active={on} aria-pressed={on}
+                  className={`h-9 rounded-md border px-2.5 text-xs capitalize transition ${
+                    on ? "border-primary bg-primary/10 text-primary" : "border-hairline text-muted-foreground hover:bg-surface-2"
+                  }`}>
+                  {s}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          {(from || to || statuses.length > 0) && (
+            <Button type="button" size="sm" variant="ghost" onClick={() => { setFrom(""); setTo(""); setStatuses([]); }}>
+              Clear
+            </Button>
+          )}
+          <Button type="button" size="sm" onClick={download} disabled={busy || rangeInvalid}
+            data-testid="commissions-export" title={rangeInvalid ? "Fix the invalid date range before exporting." : undefined}>
+            <Download className="mr-1 h-3.5 w-3.5" /> {busy ? "Exporting…" : "Export CSV"}
+          </Button>
+        </div>
+      </div>
+      {rangeInvalid && (
+        <div role="alert" className="mb-3 rounded-md border border-danger/40 bg-danger/10 px-2 py-1.5 text-[11px] text-danger">
+          Invalid date range: 'from' must be on or before 'to'.
+        </div>
+      )}
+      {rows.length === 0 ? (
+        <EmptyState title="No commission rows" description="No periods match the current date and status filters." />
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-hairline text-left text-[11px] uppercase tracking-wider text-muted-foreground">
+                <th className="py-2">Period</th>
+                <th className="py-2 text-right">Gross</th>
+                <th className="py-2 text-right">Commission</th>
+                <th className="py-2">Status</th>
+                <th className="py-2">Paid</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((c: any) => (
+                <tr key={c.period} className="border-b border-hairline last:border-0">
+                  <td className="py-2">{c.period}</td>
+                  <td className="py-2 text-right tabular-nums">{fmtMoney(c.gross)}</td>
+                  <td className="py-2 text-right tabular-nums">{fmtMoney(c.commission)}</td>
+                  <td className="py-2"><StatusBadge status={c.status} /></td>
+                  <td className="py-2 text-xs text-muted-foreground">
+                    {c.paid_at ? <time dateTime={isoAttr(c.paid_at)}>{fmtDate(c.paid_at)}</time> : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+type StatusAction = { key: "verify" | "suspend" | "reinstate"; status: "verified" | "suspended" | "pending"; label: string; title: string; body: string };
+
+const STATUS_ACTIONS: StatusAction[] = [
+  { key: "verify", status: "verified", label: "Verify", title: "Verify this author?",
+    body: "The author will be marked verified and able to publish. This action is written to the audit log." },
+  { key: "suspend", status: "suspended", label: "Suspend", title: "Suspend this author?",
+    body: "Suspension blocks publishing and payouts until reinstated. This action is written to the audit log." },
+  { key: "reinstate", status: "pending", label: "Reinstate", title: "Reinstate this author?",
+    body: "The author returns to pending review and can be verified again. This action is written to the audit log." },
+];
+
+function AuthorStatusActions({ author, onDone }: { author: any; onDone: () => Promise<void> | void }) {
+  const [pending, setPending] = useState<StatusAction | null>(null);
+  const [busy, setBusy] = useState(false);
+  const setStatus = useServerFn(setAuthorVerification);
+
+  async function confirm() {
+    if (!pending) return;
+    setBusy(true);
+    try {
+      await setStatus({ data: { id: author.id, status: pending.status, reason: `${pending.label} from author profile` } });
+      await onDone();
+      toast.success(`Author ${pending.label.toLowerCase()}d — audit entry recorded`);
+      setPending(null);
+    } catch (e: any) {
+      toast.error(e?.message ?? `Could not ${pending.label.toLowerCase()} author`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      {STATUS_ACTIONS.filter((a) => a.status !== author.status).map((a) => (
+        <Button key={a.key} size="sm" variant={a.key === "suspend" ? "destructive" : "outline"}
+          data-testid={`author-${a.key}`} onClick={() => setPending(a)}>
+          {a.label}
+        </Button>
+      ))}
+      <AlertDialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{pending?.title}</AlertDialogTitle>
+            <AlertDialogDescription>{pending?.body}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); void confirm(); }} disabled={busy} data-testid="author-status-confirm">
+              {busy ? "Working…" : `Yes, ${pending?.label.toLowerCase()}`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+
 function AuthorProfilePage() {
   const { authorId } = Route.useParams();
   const hasSession = useHasSession();
