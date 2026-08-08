@@ -540,35 +540,9 @@ function AuthorProfilePage() {
         </TabsContent>
 
         <TabsContent value="commissions" className="mt-4">
-          <Panel title="Commission history" subtitle="Last 6 periods, derived from recorded revenue and royalties" icon={Coins}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-hairline text-left text-[11px] uppercase tracking-wider text-muted-foreground">
-                    <th className="py-2">Period</th>
-                    <th className="py-2 text-right">Gross</th>
-                    <th className="py-2 text-right">Commission</th>
-                    <th className="py-2">Status</th>
-                    <th className="py-2">Paid</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {commissions.map((c: any) => (
-                    <tr key={c.period} className="border-b border-hairline last:border-0">
-                      <td className="py-2">{c.period}</td>
-                      <td className="py-2 text-right tabular-nums">{fmtMoney(c.gross)}</td>
-                      <td className="py-2 text-right tabular-nums">{fmtMoney(c.commission)}</td>
-                      <td className="py-2"><StatusBadge status={c.status} /></td>
-                      <td className="py-2 text-xs text-muted-foreground">
-                        {c.paid_at ? <time dateTime={isoAttr(c.paid_at)}>{fmtDate(c.paid_at)}</time> : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Panel>
+          <CommissionsTab authorId={author.id} commissions={commissions} />
         </TabsContent>
+
 
         <TabsContent value="wallet" className="mt-4">
           <Panel title="Wallet" subtitle="Payout balances for this author" icon={Wallet}>
